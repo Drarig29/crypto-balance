@@ -1,0 +1,7 @@
+[package]
+name = "rust-react"
+version = "0.1.0"
+authors = ["Corentin Girard <corentingirard.dev@gmail.com>"]
+
+[dependencies]
+rocket = "0.4.7"

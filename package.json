@@ -1,0 +1,26 @@
+{
+    "name": "crypto-balance",
+    "version": "0.1.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Drarig29/crypto-balance.git"
+    },
+    "description": "A web application to show charts and graphs of your crypto balance",
+    "main": "frontend/index.js",
+    "scripts": {
+        "build:backend": "cargo build",
+        "build:frontend": "webpack",
+        "build": "npm run build:backend && npm install && npm run build:frontend",
+        "dev": "webpack --watch",
+        "start": "cargo run"
+    },
+    "author": "Corentin Girard <corentingirard.dev@gmail.com>",
+    "license": "ISC",
+    "devDependencies": {
+        "esbuild-loader": "^2.9.2",
+        "react": "^17.0.1",
+        "react-dom": "^17.0.1",
+        "webpack": "^5.23.0",
+        "webpack-cli": "^4.5.0"
+    }
+}
