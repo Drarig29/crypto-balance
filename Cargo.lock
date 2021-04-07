@@ -194,6 +194,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcb25d077389e53838a8158c8e99174c5a9d902dee4904320db714f3c653ffba"
 
 [[package]]
+name = "crypto-balance"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "hmac",
+ "reqwest",
+ "rocket",
+ "sha2",
+]
+
+[[package]]
 name = "crypto-mac"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -411,6 +422,12 @@ checksum = "322f4de77956e22ed0e5032c359a0f1273f1f7f0d79bfa3b8ffbc730d7fbcc5c"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hkdf"
@@ -1011,14 +1028,6 @@ dependencies = [
  "state",
  "time",
  "unicode-xid 0.1.0",
-]
-
-[[package]]
-name = "rust-react"
-version = "0.1.0"
-dependencies = [
- "reqwest",
- "rocket",
 ]
 
 [[package]]
