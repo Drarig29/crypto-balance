@@ -3,12 +3,14 @@
 extern crate rocket;
 extern crate hex;
 extern crate hmac;
+extern crate mongodb;
 extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
 extern crate sha2;
 
 mod model;
+use mongodb::bson::Document;
 use model::binance;
 use model::database;
 
@@ -22,6 +24,8 @@ use rocket::response::content;
 use rocket::response::NamedFile;
 
 use reqwest::blocking::Client;
+
+use mongodb::bson::doc;
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -109,6 +113,14 @@ fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
     };
 
     let result = serde_json::to_string_pretty(&new_obj).unwrap();
+
+    let client = mongodb::sync::Client::with_uri_str("mongodb://root:example@127.0.0.1:27017").unwrap();
+    let database = client.database("crypto-balance");
+    let collection = database.collection("snapshots");
+
+    let docs: Vec<Document> = new_obj.snapshots.iter().map(|snapshot| mongodb::bson::ser::to_document(snapshot).unwrap()).collect();
+
+    collection.insert_many(docs, None).unwrap();
 
     Ok(result)
 }
