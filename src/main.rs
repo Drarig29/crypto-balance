@@ -1,29 +1,30 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use]
 extern crate rocket;
-extern crate reqwest;
-extern crate hmac;
-extern crate sha2;
 extern crate hex;
+extern crate hmac;
+extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
+extern crate sha2;
 
 mod model;
 use model::binance;
+use model::database;
 
 use env::VarError;
-use std::io;
 use std::env;
-use std::time::SystemTime;
+use std::io;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
-use rocket::response::NamedFile;
 use rocket::response::content;
+use rocket::response::NamedFile;
 
-use reqwest::blocking::{Client};
+use reqwest::blocking::Client;
 
-use sha2::Sha256;
 use hmac::{Hmac, Mac, NewMac};
+use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -48,23 +49,22 @@ fn get_env_vars() -> Result<BinanceAuth, VarError> {
         Ok(res) => res,
         Err(e) => return Err(e),
     };
-    
     let secret = match env::var("BINANCE_API_SECRET") {
         Ok(res) => res,
         Err(e) => return Err(e),
     };
 
-    Ok(BinanceAuth {
-        key,
-        secret,
-    })
+    Ok(BinanceAuth { key, secret })
 }
 
 // TODO: make a struct with accountType, startTime, endTime and limit as properties
 
 fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
     let client = Client::new();
-    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis();
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
 
     let params = format!("type=SPOT&limit={}&timestamp={}", 5, now);
     println!("params: {}", params);
@@ -87,21 +87,44 @@ fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
     let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
     println!("Status: {}", obj.code);
 
-    Ok(json)
+    let new_obj = database::RootObject {
+        snapshots: obj
+            .snapshots
+            .iter()
+            .map(|snapshot| database::Snapshot {
+                time: snapshot.update_time,
+                balances: snapshot
+                    .data
+                    .balances
+                    .iter()
+                    .filter(|balance| balance.free.parse::<f32>().unwrap() > 0.)
+                    .map(|balance| database::Balance {
+                        asset: balance.asset.to_owned(),
+                        amount: balance.free.parse::<f32>().unwrap(),
+                    })
+                    .collect(),
+                total_asset_of_btc: snapshot.data.total_asset_of_btc.parse::<f32>().unwrap(),
+            })
+            .collect(),
+    };
+
+    let result = serde_json::to_string_pretty(&new_obj).unwrap();
+
+    Ok(result)
 }
 
 #[get("/api")]
 fn api() -> content::Json<String> {
     let env_variables = match get_env_vars() {
         Ok(res) => res,
-        Err(err) => return content::Json(err.to_string())
+        Err(err) => return content::Json(err.to_string()),
     };
 
     let snapshots = get_binance_snapshots(env_variables);
 
     match snapshots {
         Ok(res) => content::Json(res),
-        Err(err) => content::Json(err.to_string())
+        Err(err) => content::Json(err.to_string()),
     }
 }
 
@@ -111,5 +134,7 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![index, api, files]).launch();
+    rocket::ignite()
+        .mount("/", routes![index, api, files])
+        .launch();
 }
