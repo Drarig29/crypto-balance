@@ -8,6 +8,9 @@ extern crate hex;
 extern crate serde;
 extern crate serde_json;
 
+mod model;
+use model::binance;
+
 use env::VarError;
 use std::io;
 use std::env;
@@ -16,8 +19,6 @@ use std::path::{Path, PathBuf};
 
 use rocket::response::NamedFile;
 use rocket::response::content;
-
-use serde::{Serialize, Deserialize};
 
 use reqwest::blocking::{Client};
 
@@ -29,37 +30,6 @@ type HmacSha256 = Hmac<Sha256>;
 struct BinanceAuth {
     key: String,
     secret: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct BinanceRootObject {
-    code: i64,
-    msg: String,
-    #[serde(rename = "snapshotVos")]
-    snapshot: Vec<Snapshot>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Snapshot {
-    #[serde(rename = "type")]
-    account_type: String,
-    #[serde(rename = "updateTime")]
-    update_time: i64,
-    data: Data,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Data {
-    #[serde(rename = "totalAssetOfBtc")]
-    total_asset_of_btc: String,
-    balances: Vec<Balance>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Balance {
-    asset: String,
-    free: String,
-    locked: String,
 }
 
 const API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
@@ -114,7 +84,7 @@ fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
         Err(e) => return Err(e),
     };
 
-    let obj: BinanceRootObject = serde_json::from_str(&json).unwrap();
+    let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
     println!("Status: {}", obj.code);
 
     Ok(json)
