@@ -1,0 +1,3 @@
+use('crypto-balance');
+
+db.snapshots.distinct("balances.asset");
