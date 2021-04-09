@@ -15,7 +15,7 @@ use model::binance;
 use model::database;
 use model::nomics;
 
-use mongodb::bson::Document;
+use mongodb::bson;
 
 use env::VarError;
 use std::env;
@@ -28,9 +28,7 @@ use rocket::response::NamedFile;
 
 use reqwest::blocking::Client;
 
-use mongodb::bson::doc;
-
-use chrono::DateTime;
+use chrono::{DateTime, TimeZone, Utc};
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -118,7 +116,7 @@ fn get_wallet_snapshots(
         .snapshots
         .iter()
         .map(|snapshot| database::Snapshot {
-            time: snapshot.update_time,
+            time: bson::DateTime(chrono::Utc.timestamp_millis(snapshot.update_time)),
             balances: snapshot
                 .data
                 .balances
@@ -139,9 +137,9 @@ fn get_wallet_snapshots(
     let database = client.database("crypto-balance");
     let collection = database.collection("snapshots");
 
-    let docs: Vec<Document> = new_obj
+    let docs: Vec<bson::Document> = new_obj
         .iter()
-        .map(|snapshot| mongodb::bson::ser::to_document(snapshot).unwrap())
+        .map(|snapshot| bson::ser::to_document(snapshot).unwrap())
         .collect();
 
     collection.insert_many(docs, None).unwrap();
@@ -179,7 +177,11 @@ fn get_price_history(auth: &Auth) -> Result<String, reqwest::Error> {
                 .iter()
                 .enumerate()
                 .map(|(i, timestamp)| database::HistoricPrice {
-                    time: DateTime::parse_from_rfc3339(timestamp).unwrap().timestamp(),
+                    time: bson::DateTime(
+                        DateTime::parse_from_rfc3339(timestamp)
+                            .unwrap()
+                            .with_timezone(&Utc),
+                    ),
                     price: history.prices[i].parse::<f32>().unwrap(),
                 })
                 .collect(),

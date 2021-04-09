@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use mongodb::bson::DateTime;
 
 #[derive(Serialize, Deserialize)]
 pub struct Snapshot {
-    pub time: i64,
+    pub time: DateTime,
     pub total_asset_of_btc: f32,
     pub balances: Vec<Balance>,
 }
@@ -21,6 +22,6 @@ pub struct CurrencyHistory {
 
 #[derive(Serialize, Deserialize)]
 pub struct HistoricPrice {
-    pub time: i64,
+    pub time: DateTime,
     pub price: f32,
 }
