@@ -481,6 +481,7 @@ dependencies = [
 name = "crypto-balance"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "hex",
  "hmac 0.10.1",
  "mongodb",

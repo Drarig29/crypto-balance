@@ -8,10 +8,13 @@ extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
 extern crate sha2;
+extern crate chrono;
 
 mod model;
 use model::binance;
 use model::database;
+use model::nomics;
+
 use mongodb::bson::Document;
 
 use env::VarError;
@@ -26,6 +29,8 @@ use rocket::response::NamedFile;
 use reqwest::blocking::Client;
 
 use mongodb::bson::doc;
+
+use chrono::{DateTime};
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -99,26 +104,24 @@ fn get_wallet_snapshots(auth: &Auth) -> Result<String, reqwest::Error> {
     let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
     println!("Status: {}", obj.code);
 
-    let new_obj = database::RootObject {
-        snapshots: obj
-            .snapshots
-            .iter()
-            .map(|snapshot| database::Snapshot {
-                time: snapshot.update_time,
-                balances: snapshot
-                    .data
-                    .balances
-                    .iter()
-                    .filter(|balance| balance.free.parse::<f32>().unwrap() > 0.)
-                    .map(|balance| database::Balance {
-                        asset: balance.asset.to_owned(),
-                        amount: balance.free.parse::<f32>().unwrap(),
-                    })
-                    .collect(),
-                total_asset_of_btc: snapshot.data.total_asset_of_btc.parse::<f32>().unwrap(),
-            })
-            .collect(),
-    };
+    let new_obj: Vec<database::Snapshot> = obj
+        .snapshots
+        .iter()
+        .map(|snapshot| database::Snapshot {
+            time: snapshot.update_time,
+            balances: snapshot
+                .data
+                .balances
+                .iter()
+                .filter(|balance| balance.free.parse::<f32>().unwrap() > 0.)
+                .map(|balance| database::Balance {
+                    asset: balance.asset.to_owned(),
+                    amount: balance.free.parse::<f32>().unwrap(),
+                })
+                .collect(),
+            total_asset_of_btc: snapshot.data.total_asset_of_btc.parse::<f32>().unwrap(),
+        })
+        .collect();
 
     let result = serde_json::to_string_pretty(&new_obj).unwrap();
 
@@ -127,7 +130,6 @@ fn get_wallet_snapshots(auth: &Auth) -> Result<String, reqwest::Error> {
     let collection = database.collection("snapshots");
 
     let docs: Vec<Document> = new_obj
-        .snapshots
         .iter()
         .map(|snapshot| mongodb::bson::ser::to_document(snapshot).unwrap())
         .collect();
@@ -152,7 +154,27 @@ fn get_price_history(auth: &Auth) -> Result<String, reqwest::Error> {
         Err(e) => return Err(e),
     };
 
-    Ok(json)
+    let obj: Vec<nomics::Sparkline> = serde_json::from_str(&json).unwrap();
+
+    let new_obj: Vec<database::CurrencyHistory> = obj
+        .iter()
+        .map(|history| database::CurrencyHistory {
+            asset: history.currency.to_owned(),
+            history: history
+                .timestamps
+                .iter()
+                .enumerate()
+                .map(|(i, timestamp)| database::HistoricPrice {
+                    time: DateTime::parse_from_rfc3339(timestamp).unwrap().timestamp(),
+                    price: history.prices[i].parse::<f32>().unwrap(),
+                })
+                .collect(),
+        })
+        .collect();
+
+    let result = serde_json::to_string_pretty(&new_obj).unwrap();
+
+    Ok(result)
 }
 
 #[get("/api")]
