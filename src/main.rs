@@ -68,16 +68,28 @@ fn get_env_vars() -> Result<Auth, VarError> {
     })
 }
 
-// TODO: make a struct with accountType, startTime, endTime and limit as properties
-
-fn get_wallet_snapshots(auth: &Auth) -> Result<String, reqwest::Error> {
+fn get_wallet_snapshots(
+    auth: &Auth,
+    account_type: &str,
+    limit: u8,
+    start_time: Option<u128>,
+    end_time: Option<u128>,
+) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_millis();
 
-    let params = format!("type={}&limit={}&timestamp={}", "SPOT", 5, now);
+    let mut params = format!("type={}&limit={}&timestamp={}", account_type, limit, now);
+
+    if let Some(start_time) = start_time {
+        params.push_str(format!("&startTime={}", start_time));
+    }
+
+    if let Some(end_time) = end_time {
+        params.push_str(format!("&endTime={}", end_time));
+    }
 
     let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
     mac.update(params.as_bytes());
@@ -186,7 +198,7 @@ fn api() -> content::Json<String> {
         Err(err) => return content::Json(err.to_string()),
     };
 
-    let snapshots = get_wallet_snapshots(&env_variables);
+    let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, None, None);
     let price_history = get_price_history(&env_variables);
 
     println!("{}", price_history.unwrap());
