@@ -28,7 +28,7 @@ use rocket::response::NamedFile;
 
 use reqwest::blocking::Client;
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, SecondsFormat, TimeZone, Utc};
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -66,12 +66,17 @@ fn get_env_vars() -> Result<Auth, VarError> {
     })
 }
 
+fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
+    let formatted = datetime.to_rfc3339_opts(SecondsFormat::Secs, true);
+    formatted.replace(":", "%3A")
+}
+
 fn get_wallet_snapshots(
     auth: &Auth,
     account_type: &str,
     limit: u8,
-    start_time: Option<u128>,
-    end_time: Option<u128>,
+    start_time: Option<DateTime<Utc>>,
+    end_time: Option<DateTime<Utc>>,
 ) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let now = SystemTime::now()
@@ -82,11 +87,11 @@ fn get_wallet_snapshots(
     let mut params = format!("type={}&limit={}&timestamp={}", account_type, limit, now);
 
     if let Some(start_time) = start_time {
-        params.push_str(format!("&startTime={}", start_time));
+        params += &format!("&startTime={}", start_time.timestamp_millis());
     }
 
     if let Some(end_time) = end_time {
-        params.push_str(format!("&endTime={}", end_time));
+        params += &format!("&endTime={}", end_time.timestamp_millis());
     }
 
     let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
@@ -147,16 +152,25 @@ fn get_wallet_snapshots(
     Ok(result)
 }
 
-fn get_price_history(auth: &Auth) -> Result<String, reqwest::Error> {
+fn get_price_history(
+    auth: &Auth,
+    ids: Vec<String>,
+    convert: String,
+    start_time: DateTime<Utc>,
+    end_time: Option<DateTime<Utc>>,
+) -> Result<String, reqwest::Error> {
     let client = Client::new();
 
-    let start = "2021-04-07T00:00:00Z";
-    let params = format!(
+    let mut params = format!(
         "ids={}&convert={}&start={}",
-        "BTC,ETH,XRP",
-        "EUR",
-        start.replace(":", "%3A")
+        ids.join(","),
+        convert,
+        get_uri_escaped_datetime(start_time),
     );
+
+    if let Some(end_time) = end_time {
+        params += &format!("&end={}", get_uri_escaped_datetime(end_time));
+    }
 
     let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
     let res = client.get(url).send()?;
@@ -201,7 +215,13 @@ fn api() -> content::Json<String> {
     };
 
     let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, None, None);
-    let price_history = get_price_history(&env_variables);
+    let price_history = get_price_history(
+        &env_variables,
+        vec!["BTC".to_string(), "XRP".into()],
+        "EUR".to_string(),
+        Utc.ymd(2021, 3, 18).and_hms(9, 30, 00),
+        None,
+    );
 
     println!("{}", price_history.unwrap());
 
