@@ -10,9 +10,9 @@ extern crate serde_json;
 extern crate sha2;
 
 mod model;
-use mongodb::bson::Document;
 use model::binance;
 use model::database;
+use mongodb::bson::Document;
 
 use env::VarError;
 use std::env;
@@ -32,12 +32,15 @@ use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
-struct BinanceAuth {
-    key: String,
-    secret: String,
+struct Auth {
+    binance_key: String,
+    binance_secret: String,
+    nomics_key: String,
 }
 
-const API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
+const BINANCE_API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
+const NOMICS_API_BASE_URL: &str = "https://api.nomics.com/v1/currencies/sparkline";
+const MONGODB_URL: &str = "mongodb://root:example@127.0.0.1:27017";
 
 const ACCOUNT_TYPE_SPOT: &str = "SPOT";
 const ACCOUNT_TYPE_MARGIN: &str = "MARGIN";
@@ -48,22 +51,21 @@ fn index() -> io::Result<NamedFile> {
     NamedFile::open("static/index.html")
 }
 
-fn get_env_vars() -> Result<BinanceAuth, VarError> {
-    let key = match env::var("BINANCE_API_KEY") {
-        Ok(res) => res,
-        Err(e) => return Err(e),
-    };
-    let secret = match env::var("BINANCE_API_SECRET") {
-        Ok(res) => res,
-        Err(e) => return Err(e),
-    };
+fn get_env_vars() -> Result<Auth, VarError> {
+    let binance_key = env::var("BINANCE_API_KEY")?;
+    let binance_secret = env::var("BINANCE_API_SECRET")?;
+    let nomics_key = env::var("NOMICS_API_KEY")?;
 
-    Ok(BinanceAuth { key, secret })
+    Ok(Auth {
+        binance_key,
+        binance_secret,
+        nomics_key,
+    })
 }
 
 // TODO: make a struct with accountType, startTime, endTime and limit as properties
 
-fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
+fn get_wallet_snapshots(auth: &Auth) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -73,15 +75,21 @@ fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
     let params = format!("type=SPOT&limit={}&timestamp={}", 5, now);
     println!("params: {}", params);
 
-    let mut mac = HmacSha256::new_varkey(auth.secret.as_bytes()).unwrap();
+    let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
     mac.update(params.as_bytes());
 
     let hash_message = mac.finalize().into_bytes();
     let signature = hex::encode(&hash_message);
     println!("signature: {}", signature);
 
-    let url = format!("{}?{}&signature={}", API_BASE_URL, params, signature);
-    let res = client.get(url).header("X-MBX-APIKEY", auth.key).send()?;
+    let url = format!(
+        "{}?{}&signature={}",
+        BINANCE_API_BASE_URL, params, signature
+    );
+    let res = client
+        .get(url)
+        .header("X-MBX-APIKEY", auth.binance_key.to_owned())
+        .send()?;
 
     let json = match res.text() {
         Ok(res) => res,
@@ -114,15 +122,37 @@ fn get_binance_snapshots(auth: BinanceAuth) -> Result<String, reqwest::Error> {
 
     let result = serde_json::to_string_pretty(&new_obj).unwrap();
 
-    let client = mongodb::sync::Client::with_uri_str("mongodb://root:example@127.0.0.1:27017").unwrap();
+    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
     let database = client.database("crypto-balance");
     let collection = database.collection("snapshots");
 
-    let docs: Vec<Document> = new_obj.snapshots.iter().map(|snapshot| mongodb::bson::ser::to_document(snapshot).unwrap()).collect();
+    let docs: Vec<Document> = new_obj
+        .snapshots
+        .iter()
+        .map(|snapshot| mongodb::bson::ser::to_document(snapshot).unwrap())
+        .collect();
 
     collection.insert_many(docs, None).unwrap();
 
     Ok(result)
+}
+
+fn get_price_history(auth: &Auth) -> Result<String, reqwest::Error> {
+    let client = Client::new();
+
+    // TODO: url encoded date
+    // TODO: add parameters
+    let params = "ids=BTC,ETH,XRP&convert=EUR&start=2021-04-07T00%3A00%3A00Z";
+
+    let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
+    let res = client.get(url).send()?;
+
+    let json = match res.text() {
+        Ok(res) => res,
+        Err(e) => return Err(e),
+    };
+
+    Ok(json)
 }
 
 #[get("/api")]
@@ -132,7 +162,10 @@ fn api() -> content::Json<String> {
         Err(err) => return content::Json(err.to_string()),
     };
 
-    let snapshots = get_binance_snapshots(env_variables);
+    let snapshots = get_wallet_snapshots(&env_variables);
+    let price_history = get_price_history(&env_variables);
+
+    println!("{}", price_history.unwrap());
 
     match snapshots {
         Ok(res) => content::Json(res),
