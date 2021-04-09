@@ -1,6 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use]
 extern crate rocket;
+extern crate chrono;
 extern crate hex;
 extern crate hmac;
 extern crate mongodb;
@@ -8,7 +9,6 @@ extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
 extern crate sha2;
-extern crate chrono;
 
 mod model;
 use model::binance;
@@ -30,7 +30,7 @@ use reqwest::blocking::Client;
 
 use mongodb::bson::doc;
 
-use chrono::{DateTime};
+use chrono::DateTime;
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -77,15 +77,13 @@ fn get_wallet_snapshots(auth: &Auth) -> Result<String, reqwest::Error> {
         .unwrap()
         .as_millis();
 
-    let params = format!("type=SPOT&limit={}&timestamp={}", 5, now);
-    println!("params: {}", params);
+    let params = format!("type={}&limit={}&timestamp={}", "SPOT", 5, now);
 
     let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
     mac.update(params.as_bytes());
 
     let hash_message = mac.finalize().into_bytes();
     let signature = hex::encode(&hash_message);
-    println!("signature: {}", signature);
 
     let url = format!(
         "{}?{}&signature={}",
@@ -142,9 +140,13 @@ fn get_wallet_snapshots(auth: &Auth) -> Result<String, reqwest::Error> {
 fn get_price_history(auth: &Auth) -> Result<String, reqwest::Error> {
     let client = Client::new();
 
-    // TODO: url encoded date
-    // TODO: add parameters
-    let params = "ids=BTC,ETH,XRP&convert=EUR&start=2021-04-07T00%3A00%3A00Z";
+    let start = "2021-04-07T00:00:00Z";
+    let params = format!(
+        "ids={}&convert={}&start={}",
+        "BTC,ETH,XRP",
+        "EUR",
+        start.replace(":", "%3A")
+    );
 
     let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
     let res = client.get(url).send()?;
