@@ -24,3 +24,20 @@ pub struct CurrencyHistory {
     pub asset: String,
     pub price: f32,
 }
+
+/* Aggregation results */
+
+#[derive(Serialize, Deserialize)]
+pub struct ComputedSnapshot {
+    pub time: DateTime,
+    pub total_asset_of_btc: ComputedBalance,
+    pub balances: Vec<ComputedBalance>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ComputedBalance {
+    pub asset: String,
+    pub amount: f32,
+    pub price: f32,
+    pub value: f32,
+}

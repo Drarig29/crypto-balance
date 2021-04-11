@@ -292,8 +292,14 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     assets.sort_unstable();
 
-    let price_history =
-        get_price_history(&env_variables, assets, body.conversion.to_owned(), start, end).unwrap();
+    let price_history = get_price_history(
+        &env_variables,
+        assets,
+        body.conversion.to_owned(),
+        start,
+        end,
+    )
+    .unwrap();
 
     let history_collection = database.collection("history");
 
@@ -304,7 +310,96 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     history_collection.insert_many(docs, None).unwrap();
 
-    let result = serde_json::to_string_pretty(&price_history).unwrap();
+    let computed_snapshots: Vec<database::ComputedSnapshot> = snapshots_collection.aggregate(vec![
+        doc!{
+            "$lookup": {
+              "from": "history",
+              "localField": "time",
+              "foreignField": "time",
+              "as": "prices"
+            }
+          },
+          doc!{
+            "$match": {
+              "time": {
+                "$gte": Bson::DateTime(start),
+                "$lt": Bson::DateTime(end)
+              }
+            }
+          },
+          doc!{
+            "$project": {
+              "time": 1,
+              "total_asset_of_btc": {
+                "amount": "$total_asset_of_btc",
+                "price": {
+                  "$first": {
+                    "$filter": {
+                      "input": "$prices",
+                      "as": "price",
+                      "cond": {
+                        "$eq": ["$$price.asset", "BTC"]
+                      }
+                    }
+                  }
+                }
+              },
+              "together": {
+                "$map": {
+                  "input": "$balances",
+                  "as": "balance",
+                  "in": {
+                    "balance": "$$balance",
+                    "price": {
+                      "$first": {
+                        "$filter": {
+                          "input": "$prices",
+                          "as": "price",
+                          "cond": {
+                            "$eq": ["$$price.asset", "$$balance.asset"]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          doc!{
+            "$project": {
+              "time": 1,
+              "total_asset_of_btc": {
+                "asset": "$total_asset_of_btc.price.asset",
+                "amount": "$total_asset_of_btc.amount",
+                "price": "$total_asset_of_btc.price.price",
+                "value": {
+                  "$multiply": ["$total_asset_of_btc.amount", "$total_asset_of_btc.price.price"]
+                }
+              },
+              "balances": {
+                "$map": {
+                  "input": "$together",
+                  "as": "pair",
+                  "in": {
+                    "asset": "$$pair.price.asset",
+                    "amount": "$$pair.balance.amount",
+                    "price": "$$pair.price.price",
+                    "value": {
+                      "$multiply": ["$$pair.balance.amount", "$$pair.price.price"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+    ], None).unwrap()
+    .into_iter()
+    .flatten()
+    .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
+    .collect();
+
+    let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
     content::Json(result)
 }
 

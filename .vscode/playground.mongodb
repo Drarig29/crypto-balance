@@ -76,7 +76,7 @@ db.snapshots.aggregate([
           $multiply: ["$total_asset_of_btc.amount", "$total_asset_of_btc.price.price"]
         }
       },
-      snapshots: {
+      balances: {
         $map: {
           input: "$together",
           as: "pair",
