@@ -274,12 +274,20 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     snapshots_collection.insert_many(docs, None).unwrap();
 
-    let assets: Vec<String> = snapshots_collection
+    let mut assets: Vec<String> = snapshots_collection
         .distinct("balances.asset", None, None)
         .unwrap()
         .iter()
         .map(|document| bson::from_bson(document.to_owned()).unwrap())
         .collect();
+
+    let bitcoin_asset = "BTC".to_string();
+
+    if !assets.contains(&bitcoin_asset) {
+        assets.push(bitcoin_asset);
+    }
+
+    assets.sort_unstable();
 
     let price_history =
         get_price_history(&env_variables, assets, "EUR".to_string(), start, end).unwrap();
