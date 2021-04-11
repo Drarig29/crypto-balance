@@ -3,8 +3,85 @@ use('crypto-balance');
 db.snapshots.distinct("balances.asset");
 
 db.snapshots.find({
-    time: {
-        $gte: ISODate("2021-04-05T10:00:00Z"),
-        $lt: ISODate("2021-04-11T10:00:00Z")
+  time: {
+    $gte: ISODate("2021-04-05T10:00:00Z"),
+    $lt: ISODate("2021-04-11T10:00:00Z")
+  }
+}).sort({ time: 1 });
+
+db.snapshots.aggregate([
+  {
+    $lookup: {
+      from: 'history',
+      localField: 'time',
+      foreignField: 'time',
+      as: 'prices'
     }
-}).sort({time: 1})
+  },
+  {
+    $project: {
+      time: 1,
+      total_asset_of_btc: {
+        amount: "$total_asset_of_btc",
+        price: {
+          $first: {
+            $filter: {
+              input: "$prices",
+              as: "price",
+              cond: {
+                $eq: ["$$price.asset", "BTC"]
+              }
+            }
+          }
+        }
+      },
+      together: {
+        $map: {
+          input: "$balances",
+          as: "balance",
+          in: {
+            balance: "$$balance",
+            price: {
+              $first: {
+                $filter: {
+                  input: "$prices",
+                  as: "price",
+                  cond: {
+                    $eq: ["$$price.asset", "$$balance.asset"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      time: 1,
+      total_asset_of_btc: {
+        asset: "$total_asset_of_btc.price.asset",
+        amount: "$total_asset_of_btc.amount",
+        price: "$total_asset_of_btc.price.price",
+        value: {
+          $multiply: ["$total_asset_of_btc.amount", "$total_asset_of_btc.price.price"]
+        }
+      },
+      snapshots: {
+        $map: {
+          input: "$together",
+          as: "pair",
+          in: {
+            asset: "$$pair.price.asset",
+            amount: "$$pair.balance.amount",
+            price: "$$pair.price.price",
+            value: {
+              $multiply: ["$$pair.balance.amount", "$$pair.price.price"]
+            }
+          }
+        }
+      }
+    }
+  }
+]);
