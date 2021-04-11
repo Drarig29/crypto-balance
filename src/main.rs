@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 
 use reqwest::blocking::Client;
 
-use chrono::{DateTime, SecondsFormat, TimeZone, Utc};
+use chrono::{DateTime, SecondsFormat, TimeZone, Utc, Duration};
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -132,7 +132,7 @@ fn get_wallet_snapshots(
         .snapshots
         .iter()
         .map(|snapshot| database::Snapshot {
-            time: bson::DateTime(chrono::Utc.timestamp_millis(snapshot.update_time)),
+            time: bson::DateTime(chrono::Utc.timestamp_millis(snapshot.update_time) + Duration::seconds(1)),
             balances: snapshot
                 .data
                 .balances
