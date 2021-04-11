@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 
 use reqwest::blocking::Client;
 
-use chrono::{DateTime, SecondsFormat, TimeZone, Utc, Duration};
+use chrono::{DateTime, Duration, SecondsFormat, TimeZone, Utc};
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -49,6 +49,7 @@ struct Auth {
 
 #[derive(Serialize, Deserialize)]
 struct RequestBody {
+    conversion: String,
     start: String,
     end: String,
 }
@@ -132,7 +133,9 @@ fn get_wallet_snapshots(
         .snapshots
         .iter()
         .map(|snapshot| database::Snapshot {
-            time: bson::DateTime(chrono::Utc.timestamp_millis(snapshot.update_time) + Duration::seconds(1)),
+            time: bson::DateTime(
+                chrono::Utc.timestamp_millis(snapshot.update_time) + Duration::seconds(1),
+            ),
             balances: snapshot
                 .data
                 .balances
@@ -290,7 +293,7 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     assets.sort_unstable();
 
     let price_history =
-        get_price_history(&env_variables, assets, "EUR".to_string(), start, end).unwrap();
+        get_price_history(&env_variables, assets, body.conversion.to_owned(), start, end).unwrap();
 
     let history_collection = database.collection("history");
 
