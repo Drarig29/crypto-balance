@@ -6,16 +6,20 @@ extern crate hex;
 extern crate hmac;
 extern crate mongodb;
 extern crate reqwest;
+extern crate rocket_contrib;
 extern crate serde;
 extern crate serde_json;
 extern crate sha2;
 
 mod model;
+use bson::Bson;
 use model::binance;
 use model::database;
 use model::nomics;
 
 use mongodb::bson;
+use mongodb::bson::doc;
+use mongodb::options::FindOptions;
 
 use env::VarError;
 use std::env;
@@ -23,8 +27,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use rocket::response::content;
-use rocket::response::NamedFile;
+use rocket::response::{content, NamedFile};
+use rocket_contrib::json::Json;
+
+use serde::{Deserialize, Serialize};
 
 use reqwest::blocking::Client;
 
@@ -39,6 +45,12 @@ struct Auth {
     binance_key: String,
     binance_secret: String,
     nomics_key: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RequestBody {
+    start: String,
+    end: String,
 }
 
 const BINANCE_API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
@@ -207,9 +219,75 @@ fn get_price_history(
     Ok(result)
 }
 
-#[get("/api")]
-fn api() -> content::Json<String> {
-    let env_variables = match get_env_vars() {
+#[post("/api", format = "application/json", data = "<body>")]
+fn api(body: Json<RequestBody>) -> content::Json<String> {
+    println!("Start: {}\nEnd: {}", body.start, body.end);
+    let start = DateTime::parse_from_rfc3339(&body.start)
+        .unwrap()
+        .with_timezone(&Utc);
+
+    let end = DateTime::parse_from_rfc3339(&body.end)
+        .unwrap()
+        .with_timezone(&Utc);
+
+    // make database wallet snapshots request
+    // make database price history request
+    // find start and end of database data
+    // compute needed timespans to fill in the blanks
+    // - if no timespan
+    //   - data is up to date
+    //   - aggregate data and return
+    // - if 1 or 2 timespans
+    //   - do API requests to get the missing data
+    //     - split requests in timespans of n days max
+    //     - do as many requests as needed
+    //   - upload to database
+    //   - aggregate data and return
+
+    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
+    let database = client.database("crypto-balance");
+    let collection = database.collection("snapshots");
+
+    // Sort with older first.
+    let find_options = FindOptions::builder().sort(doc! {"time": 1}).build();
+
+    let results: Vec<database::Snapshot> = collection
+        .find(
+            doc! {
+                "time": {
+                    "$gte": Bson::DateTime(start),
+                    "$lt": Bson::DateTime(end),
+                }
+            },
+            find_options,
+        )
+        .unwrap()
+        .into_iter()
+        .flatten()
+        .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
+        .collect();
+
+    let database_start: DateTime<Utc> = From::from(results.first().unwrap().time);
+    let database_end: DateTime<Utc> = From::from(results.last().unwrap().time);
+
+    println!(
+        "Database start: {}\nDatabase end: {}",
+        database_start, database_end
+    );
+
+    // let mut start: bson::DateTime;
+    // let end: bson::DateTime;
+
+    // let first = results.next();
+
+    // if let Some(Ok(first)) = first {
+    //     start = first.time;
+    // }
+
+    // let snapshot: database::Snapshot = bson::from_bson(Bson::Document(document)).unwrap();
+    //    start = snapshot.time;
+
+    /*let env_variables = match get_env_vars() {
         Ok(res) => res,
         Err(err) => return content::Json(err.to_string()),
     };
@@ -228,7 +306,9 @@ fn api() -> content::Json<String> {
     match snapshots {
         Ok(res) => content::Json(res),
         Err(err) => content::Json(err.to_string()),
-    }
+    }*/
+
+    content::Json("Yes".to_string())
 }
 
 #[get("/<file..>")]
