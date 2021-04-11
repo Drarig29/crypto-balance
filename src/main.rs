@@ -87,8 +87,8 @@ fn get_wallet_snapshots(
     auth: &Auth,
     account_type: &str,
     limit: u8,
-    start_time: Option<DateTime<Utc>>,
-    end_time: Option<DateTime<Utc>>,
+    start_time: DateTime<Utc>,
+    end_time: DateTime<Utc>,
 ) -> Result<Vec<database::Snapshot>, reqwest::Error> {
     let client = Client::new();
     let now = SystemTime::now()
@@ -96,15 +96,14 @@ fn get_wallet_snapshots(
         .unwrap()
         .as_millis();
 
-    let mut params = format!("type={}&limit={}&timestamp={}", account_type, limit, now);
-
-    if let Some(start_time) = start_time {
-        params += &format!("&startTime={}", start_time.timestamp_millis());
-    }
-
-    if let Some(end_time) = end_time {
-        params += &format!("&endTime={}", end_time.timestamp_millis());
-    }
+    let params = format!(
+        "type={}&limit={}&timestamp={}&startTime={}&endTime={}",
+        account_type,
+        limit,
+        now,
+        start_time.timestamp_millis(),
+        end_time.timestamp_millis(),
+    );
 
     let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
     mac.update(params.as_bytes());
@@ -180,13 +179,13 @@ fn get_price_history(
 
     let history: Vec<database::CurrencyHistory> = obj
         .iter()
-        .map(|history| database::CurrencyHistory {
-            asset: history.currency.to_owned(),
-            history: history
+        .map(|history| {
+            history
                 .timestamps
                 .iter()
                 .enumerate()
-                .map(|(i, timestamp)| database::HistoricPrice {
+                .map(|(i, timestamp)| database::CurrencyHistory {
+                    asset: history.currency.to_owned(),
                     time: bson::DateTime(
                         DateTime::parse_from_rfc3339(timestamp)
                             .unwrap()
@@ -194,8 +193,9 @@ fn get_price_history(
                     ),
                     price: history.prices[i].parse::<f32>().unwrap(),
                 })
-                .collect(),
+                .collect::<Vec<database::CurrencyHistory>>()
         })
+        .flatten()
         .collect();
 
     Ok(history)
@@ -256,16 +256,23 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         "Database start: {}\nDatabase end: {}",
         database_start, database_end
     );*/
-    // let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, None, None);
-
     let env_variables = match get_env_vars() {
         Ok(res) => res,
         Err(err) => return content::Json(err.to_string()),
     };
 
+    let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, start, end).unwrap();
+
     let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
     let database = client.database("crypto-balance");
     let snapshots_collection = database.collection("snapshots");
+
+    let docs: Vec<bson::Document> = snapshots
+        .iter()
+        .map(|history| bson::ser::to_document(history).unwrap())
+        .collect();
+
+    snapshots_collection.insert_many(docs, None).unwrap();
 
     let assets: Vec<String> = snapshots_collection
         .distinct("balances.asset", None, None)
