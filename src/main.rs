@@ -89,7 +89,7 @@ fn get_wallet_snapshots(
     limit: u8,
     start_time: Option<DateTime<Utc>>,
     end_time: Option<DateTime<Utc>>,
-) -> Result<String, reqwest::Error> {
+) -> Result<Vec<database::Snapshot>, reqwest::Error> {
     let client = Client::new();
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -129,7 +129,7 @@ fn get_wallet_snapshots(
     let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
     println!("Status: {}", obj.code);
 
-    let new_obj: Vec<database::Snapshot> = obj
+    let snapshots: Vec<database::Snapshot> = obj
         .snapshots
         .iter()
         .map(|snapshot| database::Snapshot {
@@ -148,20 +148,7 @@ fn get_wallet_snapshots(
         })
         .collect();
 
-    let result = serde_json::to_string_pretty(&new_obj).unwrap();
-
-    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
-    let database = client.database("crypto-balance");
-    let collection = database.collection("snapshots");
-
-    let docs: Vec<bson::Document> = new_obj
-        .iter()
-        .map(|snapshot| bson::ser::to_document(snapshot).unwrap())
-        .collect();
-
-    collection.insert_many(docs, None).unwrap();
-
-    Ok(result)
+    Ok(snapshots)
 }
 
 fn get_price_history(
@@ -169,20 +156,17 @@ fn get_price_history(
     ids: Vec<String>,
     convert: String,
     start_time: DateTime<Utc>,
-    end_time: Option<DateTime<Utc>>,
-) -> Result<String, reqwest::Error> {
+    end_time: DateTime<Utc>,
+) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
     let client = Client::new();
 
-    let mut params = format!(
-        "ids={}&convert={}&start={}",
+    let params = format!(
+        "ids={}&convert={}&start={}&end={}",
         ids.join(","),
         convert,
         get_uri_escaped_datetime(start_time),
+        get_uri_escaped_datetime(end_time),
     );
-
-    if let Some(end_time) = end_time {
-        params += &format!("&end={}", get_uri_escaped_datetime(end_time));
-    }
 
     let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
     let res = client.get(url).send()?;
@@ -194,7 +178,7 @@ fn get_price_history(
 
     let obj: Vec<nomics::Sparkline> = serde_json::from_str(&json).unwrap();
 
-    let new_obj: Vec<database::CurrencyHistory> = obj
+    let history: Vec<database::CurrencyHistory> = obj
         .iter()
         .map(|history| database::CurrencyHistory {
             asset: history.currency.to_owned(),
@@ -214,9 +198,7 @@ fn get_price_history(
         })
         .collect();
 
-    let result = serde_json::to_string_pretty(&new_obj).unwrap();
-
-    Ok(result)
+    Ok(history)
 }
 
 #[post("/api", format = "application/json", data = "<body>")]
@@ -244,7 +226,7 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     //   - upload to database
     //   - aggregate data and return
 
-    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
+    /*let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
     let database = client.database("crypto-balance");
     let collection = database.collection("snapshots");
 
@@ -273,42 +255,39 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     println!(
         "Database start: {}\nDatabase end: {}",
         database_start, database_end
-    );
+    );*/
+    // let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, None, None);
 
-    // let mut start: bson::DateTime;
-    // let end: bson::DateTime;
-
-    // let first = results.next();
-
-    // if let Some(Ok(first)) = first {
-    //     start = first.time;
-    // }
-
-    // let snapshot: database::Snapshot = bson::from_bson(Bson::Document(document)).unwrap();
-    //    start = snapshot.time;
-
-    /*let env_variables = match get_env_vars() {
+    let env_variables = match get_env_vars() {
         Ok(res) => res,
         Err(err) => return content::Json(err.to_string()),
     };
 
-    let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, None, None);
-    let price_history = get_price_history(
-        &env_variables,
-        vec!["BTC".to_string(), "XRP".into()],
-        "EUR".to_string(),
-        Utc.ymd(2021, 3, 18).and_hms(9, 30, 00),
-        None,
-    );
+    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
+    let database = client.database("crypto-balance");
+    let snapshots_collection = database.collection("snapshots");
 
-    println!("{}", price_history.unwrap());
+    let assets: Vec<String> = snapshots_collection
+        .distinct("balances.asset", None, None)
+        .unwrap()
+        .iter()
+        .map(|document| bson::from_bson(document.to_owned()).unwrap())
+        .collect();
 
-    match snapshots {
-        Ok(res) => content::Json(res),
-        Err(err) => content::Json(err.to_string()),
-    }*/
+    let price_history =
+        get_price_history(&env_variables, assets, "EUR".to_string(), start, end).unwrap();
 
-    content::Json("Yes".to_string())
+    let history_collection = database.collection("history");
+
+    let docs: Vec<bson::Document> = price_history
+        .iter()
+        .map(|history| bson::ser::to_document(history).unwrap())
+        .collect();
+
+    history_collection.insert_many(docs, None).unwrap();
+
+    let result = serde_json::to_string_pretty(&price_history).unwrap();
+    content::Json(result)
 }
 
 #[get("/<file..>")]
