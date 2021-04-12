@@ -17,9 +17,9 @@ use model::binance;
 use model::database;
 use model::nomics;
 
-use mongodb::bson;
 use mongodb::bson::doc;
 use mongodb::options::FindOptions;
+use mongodb::{bson, sync::Database};
 
 use env::VarError;
 use std::env;
@@ -168,7 +168,7 @@ fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
     formatted.replace(":", "%3A")
 }
 
-fn get_wallet_snapshots(
+fn get_api_snapshots(
     auth: &Auth,
     account_type: &str,
     limit: u8,
@@ -250,7 +250,7 @@ fn get_wallet_snapshots(
     Ok(snapshots)
 }
 
-fn get_price_history(
+fn get_api_history(
     auth: &Auth,
     ids: Vec<String>,
     convert: String,
@@ -301,31 +301,11 @@ fn get_price_history(
     Ok(history)
 }
 
-#[post("/api", format = "application/json", data = "<body>")]
-fn api(body: Json<RequestBody>) -> content::Json<String> {
-    println!("Start: {}\nEnd: {}", body.start, body.end);
-    let start = DateTime::parse_from_rfc3339(&body.start)
-        .unwrap()
-        .with_timezone(&Utc);
-
-    let end = DateTime::parse_from_rfc3339(&body.end)
-        .unwrap()
-        .with_timezone(&Utc);
-
-    // ✅ find start and end of database data
-    // ✅ compute needed timespans to fill in the blanks
-    // - if no timespan
-    //   - ✅ data is up to date
-    //   - aggregate data and return
-    // - if 1 or 2 timespans
-    //   - do API requests to get the missing data
-    //     - split requests in timespans of n days max
-    //     - do as many requests as needed
-    //   - ✅ upload to database
-    //   - ✅ aggregate data and return
-
-    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
-    let database = client.database("crypto-balance");
+fn get_database_snapshots(
+    database: &Database,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Vec<database::Snapshot> {
     let collection = database.collection("snapshots");
 
     // Sort with older first.
@@ -347,33 +327,24 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
         .collect();
 
-    let needed = get_timespans_to_retrieve(results, start, end);
+    results
+}
 
-    if needed.is_empty() {
-        // TODO: aggregate here too
-        return content::Json("".to_string());
-    }
-
-    let env_variables = match get_env_vars() {
-        Ok(res) => res,
-        Err(err) => return content::Json(err.to_string()),
-    };
-
-    let snapshots =
-        get_wallet_snapshots(&env_variables, "SPOT", 30, needed[0].start, needed[0].end).unwrap();
-
-    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
-    let database = client.database("crypto-balance");
-    let snapshots_collection = database.collection("snapshots");
+fn push_database_snapshots(database: &Database, snapshots: Vec<database::Snapshot>) {
+    let collection = database.collection("snapshots");
 
     let docs: Vec<bson::Document> = snapshots
         .iter()
         .map(|history| bson::ser::to_document(history).unwrap())
         .collect();
 
-    snapshots_collection.insert_many(docs, None).unwrap();
+    collection.insert_many(docs, None).unwrap();
+}
 
-    let mut assets: Vec<String> = snapshots_collection
+fn get_possessed_assets(database: &Database) -> Vec<String> {
+    let collection = database.collection("snapshots");
+
+    let mut assets: Vec<String> = collection
         .distinct("balances.asset", None, None)
         .unwrap()
         .iter()
@@ -387,26 +358,28 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     }
 
     assets.sort_unstable();
+    assets
+}
 
-    let price_history = get_price_history(
-        &env_variables,
-        assets,
-        body.conversion.to_owned(),
-        needed[0].start,
-        needed[0].end,
-    )
-    .unwrap();
-
-    let history_collection = database.collection("history");
+fn push_database_history(database: &Database, price_history: Vec<database::CurrencyHistory>) {
+    let collection = database.collection("history");
 
     let docs: Vec<bson::Document> = price_history
         .iter()
         .map(|history| bson::ser::to_document(history).unwrap())
         .collect();
 
-    history_collection.insert_many(docs, None).unwrap();
+    collection.insert_many(docs, None).unwrap();
+}
 
-    let computed_snapshots: Vec<database::ComputedSnapshot> = snapshots_collection.aggregate(vec![
+fn get_computed_snapshots(
+    database: &Database,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Vec<database::ComputedSnapshot> {
+    let collection = database.collection("snapshots");
+
+    let computed_snapshots: Vec<database::ComputedSnapshot> = collection.aggregate(vec![
         doc!{
             "$lookup": {
               "from": "history",
@@ -494,7 +467,74 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     .flatten()
     .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
     .collect();
+    computed_snapshots
+}
 
+#[post("/api", format = "application/json", data = "<body>")]
+fn api(body: Json<RequestBody>) -> content::Json<String> {
+    println!("Start: {}\nEnd: {}", body.start, body.end);
+    let start = DateTime::parse_from_rfc3339(&body.start)
+        .unwrap()
+        .with_timezone(&Utc);
+
+    let end = DateTime::parse_from_rfc3339(&body.end)
+        .unwrap()
+        .with_timezone(&Utc);
+
+    // ✅ find start and end of database data
+    // ✅ compute needed timespans to fill in the blanks
+    // - if no timespan
+    //   - ✅ data is up to date
+    //   - ✅ aggregate data and return
+    // - if 1 or 2 timespans
+    //   - do API requests to get the missing data
+    //     - split requests in timespans of n days max
+    //     - do as many requests as needed
+    //   - ✅ upload to database
+    //   - ✅ aggregate data and return
+
+    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
+    let database = client.database("crypto-balance");
+
+    let available_snapshots = get_database_snapshots(&database, start, end);
+    let needed_timespans = get_timespans_to_retrieve(available_snapshots, start, end);
+
+    if needed_timespans.is_empty() {
+        let computed_snapshots = get_computed_snapshots(&database, start, end);
+        let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
+        return content::Json(result);
+    }
+
+    let env_variables = match get_env_vars() {
+        Ok(res) => res,
+        Err(err) => return content::Json(err.to_string()),
+    };
+
+    let snapshots = get_api_snapshots(
+        &env_variables,
+        "SPOT",
+        30,
+        needed_timespans[0].start,
+        needed_timespans[0].end,
+    )
+    .unwrap();
+
+    push_database_snapshots(&database, snapshots);
+
+    let assets = get_possessed_assets(&database);
+
+    let price_history = get_api_history(
+        &env_variables,
+        assets,
+        body.conversion.to_owned(),
+        needed_timespans[0].start,
+        needed_timespans[0].end,
+    )
+    .unwrap();
+
+    push_database_history(&database, price_history);
+
+    let computed_snapshots = get_computed_snapshots(&database, start, end);
     let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
     content::Json(result)
 }
