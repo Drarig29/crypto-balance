@@ -1,11 +1,17 @@
 use('crypto-balance');
 
+db.history.remove({
+    _id: {
+        $gte: ObjectId("60748ed900267a57006098db")
+    }
+})
+
 db.snapshots.distinct("balances.asset");
 
 db.snapshots.find({
   time: {
     $gte: ISODate("2021-04-05T10:00:00Z"),
-    $lt: ISODate("2021-04-11T10:00:00Z")
+    $lte: ISODate("2021-04-11T10:00:00Z")
   }
 }).sort({ time: 1 });
 
@@ -22,7 +28,7 @@ db.snapshots.aggregate([
     $match: {
       time: {
         $gte: ISODate("2021-04-05T10:00:00Z"),
-        $lt: ISODate("2021-04-10T10:00:00Z")
+        $lte: ISODate("2021-04-10T10:00:00Z")
       }
     }
   },

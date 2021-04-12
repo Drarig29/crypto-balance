@@ -54,6 +54,12 @@ struct RequestBody {
     end: String,
 }
 
+#[derive(Debug)]
+struct TimeSpan {
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+}
+
 const BINANCE_API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
 const NOMICS_API_BASE_URL: &str = "https://api.nomics.com/v1/currencies/sparkline";
 const MONGODB_URL: &str = "mongodb://root:example@127.0.0.1:27017";
@@ -79,6 +85,84 @@ fn get_env_vars() -> Result<Auth, VarError> {
     })
 }
 
+fn get_missing_timespans(needed: TimeSpan, available: TimeSpan) -> Vec<TimeSpan> {
+    assert!(needed.start <= needed.end);
+    assert!(available.start <= available.end);
+
+    if needed.start >= available.start && needed.end <= available.end {
+        return vec![];
+    }
+
+    if needed.start >= available.end && needed.end >= available.end {
+        let start = if needed.start == available.end {
+            needed.start + Duration::days(1)
+        } else {
+            needed.start
+        };
+
+        return vec![TimeSpan { start, ..needed }];
+    }
+
+    if needed.start <= available.start && needed.end <= available.start {
+        let end = if needed.end == available.start {
+            needed.end - Duration::days(1)
+        } else {
+            needed.end
+        };
+
+        return vec![TimeSpan { end, ..needed }];
+    }
+
+    if needed.start <= available.start && needed.end <= available.end {
+        let end = available.start - Duration::days(1);
+        return vec![TimeSpan { end, ..needed }];
+    }
+
+    if needed.start >= available.start && needed.end >= available.end {
+        let start = available.end + Duration::days(1);
+        return vec![TimeSpan { start, ..needed }];
+    }
+
+    if needed.start <= available.start && needed.end >= available.end {
+        let end = available.start - Duration::days(1);
+        let start = available.end + Duration::days(1);
+        return vec![TimeSpan { end, ..needed }, TimeSpan { start, ..needed }];
+    }
+
+    panic!("Unsupported case!");
+}
+
+fn get_timespans_to_retrieve(
+    snapshots: Vec<database::Snapshot>,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Vec<TimeSpan> {
+    if snapshots.is_empty() {
+        return vec![TimeSpan { start, end }];
+    }
+
+    let database_start: DateTime<Utc> = From::from(snapshots.first().unwrap().time);
+    let database_end: DateTime<Utc> = From::from(snapshots.last().unwrap().time);
+
+    println!(
+        "Database start: {}\nDatabase end: {}",
+        database_start, database_end
+    );
+
+    let needed = TimeSpan { start, end };
+
+    let available = TimeSpan {
+        start: database_start,
+        end: database_end,
+    };
+
+    let missing = get_missing_timespans(needed, available);
+
+    println!("Missing: {:?}", missing);
+
+    missing
+}
+
 fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
     let formatted = datetime.to_rfc3339_opts(SecondsFormat::Secs, true);
     formatted.replace(":", "%3A")
@@ -88,8 +172,8 @@ fn get_wallet_snapshots(
     auth: &Auth,
     account_type: &str,
     limit: u8,
-    start_time: DateTime<Utc>,
-    end_time: DateTime<Utc>,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
 ) -> Result<Vec<database::Snapshot>, reqwest::Error> {
     let client = Client::new();
     let now = SystemTime::now()
@@ -97,13 +181,26 @@ fn get_wallet_snapshots(
         .unwrap()
         .as_millis();
 
+    let shifted_start = if start == end {
+        start - Duration::days(1)
+    } else {
+        start - Duration::seconds(1)
+    };
+
+    let shifted_end = end - Duration::seconds(1);
+
+    println!(
+        "Call Binance API (start: {}, end: {})",
+        shifted_start, shifted_end
+    );
+
     let params = format!(
         "type={}&limit={}&timestamp={}&startTime={}&endTime={}",
         account_type,
         limit,
         now,
-        start_time.timestamp_millis(),
-        end_time.timestamp_millis(),
+        shifted_start.timestamp_millis(),
+        shifted_end.timestamp_millis(),
     );
 
     let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
@@ -157,8 +254,8 @@ fn get_price_history(
     auth: &Auth,
     ids: Vec<String>,
     convert: String,
-    start_time: DateTime<Utc>,
-    end_time: DateTime<Utc>,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
 ) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
     let client = Client::new();
 
@@ -166,8 +263,8 @@ fn get_price_history(
         "ids={}&convert={}&start={}&end={}",
         ids.join(","),
         convert,
-        get_uri_escaped_datetime(start_time),
-        get_uri_escaped_datetime(end_time),
+        get_uri_escaped_datetime(start),
+        get_uri_escaped_datetime(end),
     );
 
     let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
@@ -215,21 +312,19 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         .unwrap()
         .with_timezone(&Utc);
 
-    // make database wallet snapshots request
-    // make database price history request
-    // find start and end of database data
-    // compute needed timespans to fill in the blanks
+    // ✅ find start and end of database data
+    // ✅ compute needed timespans to fill in the blanks
     // - if no timespan
-    //   - data is up to date
+    //   - ✅ data is up to date
     //   - aggregate data and return
     // - if 1 or 2 timespans
     //   - do API requests to get the missing data
     //     - split requests in timespans of n days max
     //     - do as many requests as needed
-    //   - upload to database
-    //   - aggregate data and return
+    //   - ✅ upload to database
+    //   - ✅ aggregate data and return
 
-    /*let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
+    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
     let database = client.database("crypto-balance");
     let collection = database.collection("snapshots");
 
@@ -241,7 +336,7 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
             doc! {
                 "time": {
                     "$gte": Bson::DateTime(start),
-                    "$lt": Bson::DateTime(end),
+                    "$lte": Bson::DateTime(end),
                 }
             },
             find_options,
@@ -252,19 +347,20 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
         .collect();
 
-    let database_start: DateTime<Utc> = From::from(results.first().unwrap().time);
-    let database_end: DateTime<Utc> = From::from(results.last().unwrap().time);
+    let needed = get_timespans_to_retrieve(results, start, end);
 
-    println!(
-        "Database start: {}\nDatabase end: {}",
-        database_start, database_end
-    );*/
+    if needed.is_empty() {
+        // TODO: aggregate here too
+        return content::Json("".to_string());
+    }
+
     let env_variables = match get_env_vars() {
         Ok(res) => res,
         Err(err) => return content::Json(err.to_string()),
     };
 
-    let snapshots = get_wallet_snapshots(&env_variables, "SPOT", 5, start, end).unwrap();
+    let snapshots =
+        get_wallet_snapshots(&env_variables, "SPOT", 30, needed[0].start, needed[0].end).unwrap();
 
     let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
     let database = client.database("crypto-balance");
@@ -296,8 +392,8 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         &env_variables,
         assets,
         body.conversion.to_owned(),
-        start,
-        end,
+        needed[0].start,
+        needed[0].end,
     )
     .unwrap();
 
