@@ -1,10 +1,13 @@
 use('crypto-balance');
 
-db.history.remove({
-    _id: {
-        $gte: ObjectId("60748ed900267a57006098db")
-    }
-})
+// db.history.deleteMany({});
+// db.snapshots.deleteMany({});
+
+// db.history.deleteMany({
+//     _id: {
+//         $gte: ObjectId("60748ed900267a57006098db")
+//     }
+// })
 
 db.snapshots.distinct("balances.asset");
 

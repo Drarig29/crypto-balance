@@ -138,6 +138,7 @@ fn get_timespans_to_retrieve(
     end: DateTime<Utc>,
 ) -> Vec<TimeSpan> {
     if snapshots.is_empty() {
+        println!("No available data.");
         return vec![TimeSpan { start, end }];
     }
 
@@ -176,6 +177,7 @@ fn get_api_snapshots(
     end: DateTime<Utc>,
 ) -> Result<Vec<database::Snapshot>, reqwest::Error> {
     let client = Client::new();
+
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -224,7 +226,6 @@ fn get_api_snapshots(
     };
 
     let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
-    println!("Status: {}", obj.code);
 
     let snapshots: Vec<database::Snapshot> = obj
         .snapshots
@@ -247,6 +248,8 @@ fn get_api_snapshots(
         })
         .collect();
 
+    println!("Got {} snapshots.", snapshots.len());
+
     Ok(snapshots)
 }
 
@@ -258,6 +261,8 @@ fn get_api_history(
     end: DateTime<Utc>,
 ) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
     let client = Client::new();
+
+    println!("Call Nomics API (start: {}, end: {})", start, end);
 
     let params = format!(
         "ids={}&convert={}&start={}&end={}",
@@ -297,6 +302,8 @@ fn get_api_history(
         })
         .flatten()
         .collect();
+
+    println!("Got {} currencies history.", history.len());
 
     Ok(history)
 }
