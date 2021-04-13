@@ -545,20 +545,6 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         .unwrap()
         .with_timezone(&Utc);
 
-    // let timespans = split_timespan_max_days(TimeSpan { start, end }, 30);
-
-    // ✅ find start and end of database data
-    // ✅ compute needed timespans to fill in the blanks
-    // - if no timespan
-    //   - ✅ data is up to date
-    //   - ✅ aggregate data and return
-    // - if 1 or 2 timespans
-    //   - do API requests to get the missing data
-    //     - ✅ split requests in timespans of n days max
-    //     - ✅ do as many requests as needed
-    //   - ✅ upload to database
-    //   - ✅ aggregate data and return
-
     let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
     let database = client.database("crypto-balance");
 
