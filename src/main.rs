@@ -164,6 +164,34 @@ fn get_timespans_to_retrieve(
     missing
 }
 
+fn split_timespan_max_days(timespan: TimeSpan, max_days: i64) -> Vec<TimeSpan> {
+    if (timespan.end - timespan.start).num_days() < max_days {
+        return vec![timespan];
+    }
+
+    let mut timespans: Vec<TimeSpan> = vec![];
+
+    let mut current_start = timespan.start.clone();
+    let mut current_end = timespan.start + Duration::days(max_days - 1);
+
+    while current_end < timespan.end {
+        timespans.push(TimeSpan {
+            start: current_start,
+            end: current_end,
+        });
+
+        current_start = current_end + Duration::days(1);
+        current_end = current_start + Duration::days(max_days - 1);
+    }
+
+    timespans.push(TimeSpan {
+        start: current_start,
+        end: timespan.end,
+    });
+
+    timespans
+}
+
 fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
     let formatted = datetime.to_rfc3339_opts(SecondsFormat::Secs, true);
     formatted.replace(":", "%3A")
@@ -488,6 +516,8 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         .unwrap()
         .with_timezone(&Utc);
 
+    // let timespans = split_timespan_max_days(TimeSpan { start, end }, 30);
+
     // ✅ find start and end of database data
     // ✅ compute needed timespans to fill in the blanks
     // - if no timespan
@@ -495,7 +525,7 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     //   - ✅ aggregate data and return
     // - if 1 or 2 timespans
     //   - do API requests to get the missing data
-    //     - split requests in timespans of n days max
+    //     - ✅ split requests in timespans of n days max
     //     - do as many requests as needed
     //   - ✅ upload to database
     //   - ✅ aggregate data and return
