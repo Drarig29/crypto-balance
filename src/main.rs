@@ -22,10 +22,10 @@ use mongodb::options::FindOptions;
 use mongodb::{bson, sync::Database};
 
 use env::VarError;
-use std::env;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use std::{env, vec};
 
 use rocket::response::{content, NamedFile};
 use rocket_contrib::json::Json;
@@ -164,9 +164,12 @@ fn get_timespans_to_retrieve(
     missing
 }
 
-fn split_timespan_max_days(timespan: TimeSpan, max_days: i64) -> Vec<TimeSpan> {
+fn split_timespan_max_days(timespan: &TimeSpan, max_days: i64) -> Vec<TimeSpan> {
     if (timespan.end - timespan.start).num_days() < max_days {
-        return vec![timespan];
+        return vec![TimeSpan {
+            start: timespan.start,
+            end: timespan.end,
+        }];
     }
 
     let mut timespans: Vec<TimeSpan> = vec![];
@@ -190,6 +193,31 @@ fn split_timespan_max_days(timespan: TimeSpan, max_days: i64) -> Vec<TimeSpan> {
     });
 
     timespans
+}
+
+fn split_all_timespans_max_days(timespans: &Vec<TimeSpan>, max_days: i64) -> Vec<TimeSpan> {
+    let mut results: Vec<TimeSpan> = vec![];
+
+    for timespan in timespans {
+        let mut intermediate_results = split_timespan_max_days(timespan, max_days);
+        results.append(&mut intermediate_results);
+    }
+
+    results
+}
+
+fn run_request_loop<T>(
+    timespans: &Vec<TimeSpan>,
+    func: &mut dyn FnMut(&TimeSpan) -> Result<Vec<T>, reqwest::Error>,
+) -> vec::Vec<T> {
+    let mut results: Vec<T> = vec![];
+
+    for timespan in timespans {
+        let mut intermediate_results = func(timespan).unwrap();
+        results.append(&mut intermediate_results);
+    }
+
+    results
 }
 
 fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
@@ -526,7 +554,7 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     // - if 1 or 2 timespans
     //   - do API requests to get the missing data
     //     - ✅ split requests in timespans of n days max
-    //     - do as many requests as needed
+    //     - ✅ do as many requests as needed
     //   - ✅ upload to database
     //   - ✅ aggregate data and return
 
@@ -547,27 +575,25 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         Err(err) => return content::Json(err.to_string()),
     };
 
-    let snapshots = get_api_snapshots(
-        &env_variables,
-        "SPOT",
-        30,
-        needed_timespans[0].start,
-        needed_timespans[0].end,
-    )
-    .unwrap();
+    let all_timespans = split_all_timespans_max_days(&needed_timespans, 30);
+
+    let snapshots = run_request_loop(&all_timespans, &mut |timespan: &TimeSpan| {
+        get_api_snapshots(&env_variables, "SPOT", 30, timespan.start, timespan.end)
+    });
 
     push_database_snapshots(&database, snapshots);
 
     let assets = get_possessed_assets(&database);
 
-    let price_history = get_api_history(
-        &env_variables,
-        assets,
-        body.conversion.to_owned(),
-        needed_timespans[0].start,
-        needed_timespans[0].end,
-    )
-    .unwrap();
+    let price_history = run_request_loop(&all_timespans, &mut |timespan: &TimeSpan| {
+        get_api_history(
+            &env_variables,
+            assets.to_owned(),
+            body.conversion.to_owned(),
+            timespan.start,
+            timespan.end,
+        )
+    });
 
     push_database_history(&database, price_history);
 
