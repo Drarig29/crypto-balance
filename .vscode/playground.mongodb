@@ -29,15 +29,15 @@ db.snapshots.aggregate([
       as: 'prices'
     }
   },
-  /*{
+  {
     $match: {
       time: {
-        $gte: ISODate("2021-04-05T10:00:00Z"),
-        $lte: ISODate("2021-04-10T10:00:00Z")
+        $gte: ISODate("2021-02-02T00:00:00Z"),
+        $lte: ISODate("2021-02-02T00:00:00Z")
       }
     }
-  },*/
-  {
+  },
+  /*{
     $project: {
       time: 1,
       total_asset_of_btc: {
@@ -80,7 +80,7 @@ db.snapshots.aggregate([
     $project: {
       time: 1,
       total_asset_of_btc: {
-        asset: "$total_asset_of_btc.price.asset",
+        asset: "BTC",
         amount: "$total_asset_of_btc.amount",
         price: "$total_asset_of_btc.price.price",
         value: {
@@ -102,5 +102,5 @@ db.snapshots.aggregate([
         }
       }
     }
-  }
+  }*/
 ]);

@@ -502,7 +502,7 @@ fn get_computed_snapshots(
             "$project": {
               "time": 1,
               "total_asset_of_btc": {
-                "asset": "$total_asset_of_btc.price.asset",
+                "asset": "BTC",
                 "amount": "$total_asset_of_btc.amount",
                 "price": "$total_asset_of_btc.price.price",
                 "value": {
@@ -562,17 +562,18 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         Err(err) => return content::Json(err.to_string()),
     };
 
-    let all_timespans = split_all_timespans_max_days(&needed_timespans, 30);
+    let split_by_30_days = split_all_timespans_max_days(&needed_timespans, 30);
 
-    let snapshots = run_request_loop(&all_timespans, &mut |timespan: &TimeSpan| {
+    let snapshots = run_request_loop(&split_by_30_days, &mut |timespan: &TimeSpan| {
         get_api_snapshots(&env_variables, "SPOT", 30, timespan.start, timespan.end)
     });
 
     push_database_snapshots(&database, snapshots);
 
     let assets = get_possessed_assets(&database);
+    let split_by_45_days = split_all_timespans_max_days(&needed_timespans, 45);
 
-    let price_history = run_request_loop(&all_timespans, &mut |timespan: &TimeSpan| {
+    let price_history = run_request_loop(&split_by_45_days, &mut |timespan: &TimeSpan| {
         get_api_history(
             &env_variables,
             assets.to_owned(),
