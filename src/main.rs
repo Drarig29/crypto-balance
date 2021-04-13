@@ -514,7 +514,7 @@ fn get_computed_snapshots(
                   "input": "$together",
                   "as": "pair",
                   "in": {
-                    "asset": "$$pair.price.asset",
+                    "asset": "$$pair.balance.asset",
                     "amount": "$$pair.balance.amount",
                     "price": "$$pair.price.price",
                     "value": {
@@ -530,6 +530,7 @@ fn get_computed_snapshots(
     .flatten()
     .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
     .collect();
+
     computed_snapshots
 }
 

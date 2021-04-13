@@ -38,6 +38,6 @@ pub struct ComputedSnapshot {
 pub struct ComputedBalance {
     pub asset: String,
     pub amount: f32,
-    pub price: f32,
-    pub value: f32,
+    pub price: Option<f32>,
+    pub value: Option<f32>,
 }
