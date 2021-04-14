@@ -31,7 +31,7 @@ export default function ({ initialRange, onRangeChange }) {
     const modifiers = { start: from, end: to };
 
     return (
-        <div className="InputFromTo" style={{ margin: 20 }}>
+        <div className="InputFromTo" style={{ margin: 20, color: 'white' }}>
             <span>Filter data from </span>
             <DayPickerInput
                 value={from}
