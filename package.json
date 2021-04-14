@@ -24,6 +24,8 @@
         "webpack-cli": "^4.5.0"
     },
     "dependencies": {
-        "recharts": "^2.0.9"
+        "css-loader": "^5.2.1",
+        "recharts": "^2.0.9",
+        "style-loader": "^2.0.0"
     }
 }
