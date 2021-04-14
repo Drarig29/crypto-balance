@@ -7,9 +7,9 @@ import 'react-day-picker/lib/style.css';
 
 import { formatDate, parseDate } from 'react-day-picker/moment';
 
-export default function ({ onRangeChange }) {
-    const [from, setFrom] = useState(undefined);
-    const [to, setTo] = useState(undefined);
+export default function ({ initialRange, onRangeChange }) {
+    const [from, setFrom] = useState(initialRange.from);
+    const [to, setTo] = useState(initialRange.to);
 
     const showFromMonth = () => {
         if (!from) return;

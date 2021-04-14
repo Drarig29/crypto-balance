@@ -1,3 +1,4 @@
+import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
@@ -24,8 +25,8 @@ export default function () {
     const [snapshots, setSnapshots] = useState([]);
 
     const [dateRange, setDateRange] = useState({
-        from: new Date("2021-04-01T00:00:00Z"),
-        to: new Date("2021-04-12T00:00:00Z"),
+        from: moment().subtract(1, 'month').toDate(),
+        to: moment().toDate(),
     });
 
     useEffect(() => {
@@ -57,7 +58,7 @@ export default function () {
     return (
         <div>
             <p>Data container</p>
-            <DatePicker onRangeChange={(from, to) => setDateRange({ from, to })} />
+            <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
             <AreaChart data={snapshots} />
         </div>
     )
