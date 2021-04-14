@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 
@@ -9,8 +9,11 @@ import { Pie } from 'recharts';
 import { Cell } from 'recharts';
 import { ResponsiveContainer } from 'recharts';
 import { toCurrency } from './helpers';
+import { Context } from '.';
 
-export default function ({ data, currency }) {
+export default function ({ data }) {
+    const [context] = useContext(Context);
+
     const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
@@ -41,7 +44,7 @@ export default function ({ data, currency }) {
                         return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
                     })}
                 </Pie>
-                <Tooltip formatter={value => toCurrency(value, currency)} />
+                <Tooltip formatter={value => toCurrency(value, context)} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
             </PieChart>
         </ResponsiveContainer>

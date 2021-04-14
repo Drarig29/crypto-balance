@@ -68,3 +68,8 @@ header {
     transform: rotate(360deg);
   }
 }
+
+.reveal-button {
+  margin-right: 12px;
+  transform: translate(0, 4px);
+}

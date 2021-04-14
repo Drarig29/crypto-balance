@@ -1,15 +1,13 @@
 import moment from 'moment';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import AreaChart from './AreaChart';
 import DatePicker from './DatePicker';
 import DougnutChart from './DougnutChart';
-import { toCurrency, toISOString } from './helpers';
+import VisibilityButton from './VisibilityButton';
 
-const currency = {
-    name: 'EUR',
-    symbol: '€',
-}
+import { toCurrency, toISOString } from './helpers';
+import { Context } from '.';
 
 function Spinner({ visible }) {
     return <span className="spinner" style={{ visibility: visible ? 'visible' : 'hidden' }}></span>
@@ -28,21 +26,22 @@ function transformData(snapshots) {
 }
 
 export default function () {
+    const [context, setContext] = useContext(Context);
+
     const [snapshots, setSnapshots] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(null);
 
     const [dateRange, setDateRange] = useState({
         from: moment().subtract(1, 'month').toDate(),
         to: moment().toDate(),
     });
 
-    const [loading, setLoading] = useState(false);
-    const [selectedIndex, setSelectedIndex] = useState(null);
-
     useEffect(() => {
         console.log(dateRange);
 
         const body = JSON.stringify({
-            conversion: currency.name,
+            conversion: context.currency.name,
             start: toISOString(dateRange.from),
             end: toISOString(dateRange.to),
         });
@@ -73,6 +72,13 @@ export default function () {
             });
     }, [dateRange]);
 
+    const handleRevealedChange = revealed => {
+        setContext({
+            ...context,
+            revealValues: revealed,
+        });
+    }
+
     const currentSnapshot = snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1];
 
     return (
@@ -80,10 +86,13 @@ export default function () {
             <header>
                 <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
                 <Spinner visible={loading} />
-                <aside>Total: {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'], currency.symbol)}</aside>
+                <aside>
+                    <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
+                    Total: {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'], context)}
+                </aside>
             </header>
-            <AreaChart currency={currency.symbol} data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
-            <DougnutChart currency={currency.symbol} data={currentSnapshot} />
+            <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
+            <DougnutChart data={currentSnapshot} />
         </>
     )
 }
