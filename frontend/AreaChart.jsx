@@ -10,6 +10,7 @@ import { CartesianGrid } from 'recharts';
 import { XAxis } from 'recharts';
 import { AreaChart } from 'recharts';
 import { Legend } from 'recharts';
+import { ResponsiveContainer } from 'recharts';
 
 export default function ({ data }) {
     const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
@@ -19,17 +20,18 @@ export default function ({ data }) {
     rainbow.setNumberRange(0, assets.length + 1);
 
     return (
-        <AreaChart width={1000} height={500} data={data}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <XAxis dataKey="time" />
-            <YAxis />
-            <CartesianGrid strokeDasharray="3 3" />
-            <Tooltip />
-            <Legend />
-            {assets.map((name, index) => {
-                const color = `#${rainbow.colorAt(index)}`;
-                return <Area key={index} type="monotone" dataKey={name} stackId="1" stroke={color} fill={color} />
-            })}
-        </AreaChart>
+        <ResponsiveContainer width="60%" height={500} >
+            <AreaChart data={data}>
+                <XAxis dataKey="time" />
+                <YAxis />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <Tooltip />
+                <Legend />
+                {assets.map((name, index) => {
+                    const color = `#${rainbow.colorAt(index)}`;
+                    return <Area key={index} type="monotone" dataKey={name} stackId="1" stroke={color} fill={color} />
+                })}
+            </AreaChart>
+        </ResponsiveContainer>
     )
 }

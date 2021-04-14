@@ -57,11 +57,10 @@ export default function () {
     }, [dateRange]);
 
     return (
-        <div>
-            <p>Data container</p>
+        <>
             <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
             <AreaChart data={snapshots} />
             <DougnutChart data={snapshots[snapshots.length - 1]} />
-        </div>
+        </>
     )
 }

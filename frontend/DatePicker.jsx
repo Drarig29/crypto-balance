@@ -31,7 +31,8 @@ export default function ({ initialRange, onRangeChange }) {
     const modifiers = { start: from, end: to };
 
     return (
-        <div className="InputFromTo">
+        <div className="InputFromTo" style={{ margin: 20 }}>
+            <span>Filter data from </span>
             <DayPickerInput
                 value={from}
                 placeholder="From"
@@ -47,7 +48,8 @@ export default function ({ initialRange, onRangeChange }) {
                     onDayClick: () => this.to.getInput().focus(),
                 }}
                 onDayChange={handleFromChange}
-            />{' '}—{' '}
+            />
+            <span> to </span>
             <span className="InputFromTo-to">
                 <DayPickerInput
                     ref={el => (this.to = el)}
