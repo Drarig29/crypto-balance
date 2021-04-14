@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import AreaChart from './AreaChart';
 import DatePicker from './DatePicker';
 import DougnutChart from './DougnutChart';
-import { toISOString } from './helpers';
+import { toCurrency, toISOString } from './helpers';
 
 const currency = {
     name: 'EUR',
@@ -73,14 +73,17 @@ export default function () {
             });
     }, [dateRange]);
 
+    const currentSnapshot = snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1];
+
     return (
         <>
             <header>
                 <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
                 <Spinner visible={loading} />
+                <aside>Total: {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'], currency.symbol)}</aside>
             </header>
             <AreaChart currency={currency.symbol} data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
-            <DougnutChart currency={currency.symbol} data={snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1]} />
+            <DougnutChart currency={currency.symbol} data={currentSnapshot} />
         </>
     )
 }

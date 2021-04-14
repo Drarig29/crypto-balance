@@ -17,6 +17,13 @@ main {
   align-items: center;
 }
 
+aside {
+  position: absolute;
+  right: 30px;
+  color: #487280;
+  font-size: 1.5em;
+}
+
 .recharts-text {
   fill: #43555c;
 }
