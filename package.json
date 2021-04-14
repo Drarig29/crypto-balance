@@ -9,9 +9,9 @@
     "main": "frontend/index.js",
     "scripts": {
         "build:backend": "cargo build",
-        "build:frontend": "esbuild --bundle frontend/index.jsx --outfile=static/dist/bundle.js --loader:.js=jsx --minify",
+        "build:frontend": "node esbuild.js",
         "build": "npm run build:backend && npm install && npm run build:frontend",
-        "dev": "esbuild --bundle frontend/index.jsx --outfile=static/dist/bundle.js --loader:.js=jsx --watch",
+        "dev": "node esbuild.js --dev",
         "start": "cargo run"
     },
     "author": "Corentin Girard <corentingirard.dev@gmail.com>",
@@ -20,9 +20,8 @@
         "esbuild": "^0.11.10"
     },
     "dependencies": {
-        "react": "^17.0.1",
-        "react-dom": "^17.0.1",
         "moment": "^2.29.1",
+        "preact": "^10.5.13",
         "rainbowvis.js": "^1.0.1",
         "react-day-picker": "^7.4.10",
         "recharts": "^2.0.9"

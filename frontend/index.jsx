@@ -1,5 +1,5 @@
-import React, { createContext, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import { h, render, createContext } from 'preact';
+import { useState, useEffect } from "preact/hooks";
 
 import { DataContainer } from './components/DataContainer';
 
@@ -32,6 +32,6 @@ const App = () => {
     )
 }
 
-ReactDOM.render(<App />, document.getElementById('app'));
+render(<App />, document.getElementById('app'));
 
 export { Context };

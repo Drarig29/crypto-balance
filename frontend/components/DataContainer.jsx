@@ -1,5 +1,7 @@
+import { h, Fragment } from "preact";
+import { useContext, useEffect, useState } from 'preact/hooks';
+
 import moment from 'moment';
-import React, { useContext, useEffect, useState } from 'react';
 
 import { AreaChart } from './AreaChart';
 import { DatePicker } from './DatePicker';

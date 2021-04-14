@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { h } from "preact";
+import { useRef, useState } from "preact/hooks";
+
 import moment from 'moment';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -9,11 +11,12 @@ import { formatDate, parseDate } from 'react-day-picker/moment';
 export const DatePicker = ({ initialRange, onRangeChange }) => {
     const [from, setFrom] = useState(initialRange.from);
     const [to, setTo] = useState(initialRange.to);
+    const toPickerRef = useRef(null);
 
     const showFromMonth = () => {
         if (!from) return;
         if (moment(to).diff(moment(from), 'months') < 2) {
-            this.to.getDayPicker().showMonth(from);
+            toPickerRef.current.getDayPicker().showMonth(from);
         }
     }
 
@@ -44,14 +47,14 @@ export const DatePicker = ({ initialRange, onRangeChange }) => {
                     toMonth: to,
                     modifiers,
                     numberOfMonths: 2,
-                    onDayClick: () => this.to.getInput().focus(),
+                    onDayClick: () => toPickerRef.current.getInput().focus(),
                 }}
                 onDayChange={handleFromChange}
             />
             <span style={{ color: 'white' }}> to </span>
             <span className="InputFromTo-to">
                 <DayPickerInput
-                    ref={el => (this.to = el)}
+                    ref={toPickerRef}
                     value={to}
                     placeholder="To"
                     format="LL"

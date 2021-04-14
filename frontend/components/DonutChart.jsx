@@ -1,4 +1,5 @@
-import React, { useContext, useState } from 'react';
+import { h } from "preact";
+import { useContext, useState } from "preact/hooks";
 
 import Rainbow from 'rainbowvis.js';
 import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';

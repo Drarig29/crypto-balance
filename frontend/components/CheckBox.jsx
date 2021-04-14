@@ -1,4 +1,4 @@
-import React from "react";
+import { h } from "preact";
 
 export const Checkbox = ({ label, isSelected, onCheckboxChange }) => (
     <div style={{ color: 'white', marginBottom: 10 }}>
