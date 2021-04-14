@@ -41,7 +41,7 @@ export default function ({ data, onDateClicked }) {
         <>
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
-            <ResponsiveContainer width="60%" height={500} >
+            <ResponsiveContainer width="60%" height={500}>
                 <AreaChart data={data} onClick={handleDateClicked}>
                     <XAxis dataKey="time" />
                     <YAxis />
