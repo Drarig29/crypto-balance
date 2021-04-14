@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import AreaChart from './AreaChart';
+import DataContainer from './DataContainer';
 
 import './style.css';
 
 const App = () => (
     <>
-        <AreaChart />
+        <DataContainer />
     </>
 )
 
