@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 
@@ -15,19 +15,31 @@ export default function ({ data }) {
     const values = assets.map(asset => ({ name: asset, value: data[asset] }));
     console.log({ values });
 
+    const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
+
     const rainbow = new Rainbow();
     rainbow.setNumberRange(0, values.length + 1);
+
+    const handleMouseEnter = (o) => {
+        const { value } = o;
+        setThickness({ ...thickness, [value]: 3 });
+    };
+
+    const handleMouseLeave = (o) => {
+        const { value } = o;
+        setThickness({ ...thickness, [value]: 1 });
+    };
 
     return (
         <PieChart width={300} height={300} margin={{ left: 50, right: 50 }}>
             <Pie data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={50} paddingAngle={5}>
-                {values.map((_, index) => {
+                {values.map((value, index) => {
                     const color = `#${rainbow.colorAt(index)}`;
-                    return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} />
+                    return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
                 })}
             </Pie>
             <Tooltip />
-            <Legend />
+            <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
         </PieChart>
     )
 }

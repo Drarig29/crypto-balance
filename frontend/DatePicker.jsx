@@ -31,8 +31,8 @@ export default function ({ initialRange, onRangeChange }) {
     const modifiers = { start: from, end: to };
 
     return (
-        <div className="InputFromTo" style={{ margin: 20, color: 'white' }}>
-            <span>Filter data from </span>
+        <div className="InputFromTo" style={{ margin: 20 }}>
+            <span style={{ color: 'white' }}>Filter data from </span>
             <DayPickerInput
                 value={from}
                 placeholder="From"
@@ -49,7 +49,7 @@ export default function ({ initialRange, onRangeChange }) {
                 }}
                 onDayChange={handleFromChange}
             />
-            <span> to </span>
+            <span style={{ color: 'white' }}> to </span>
             <span className="InputFromTo-to">
                 <DayPickerInput
                     ref={el => (this.to = el)}

@@ -20,3 +20,20 @@ main {
 .recharts-text {
   fill: #43555c;
 }
+
+.recharts-default-tooltip {
+  background-color: #042f3ece !important;
+  border-color: #548fa5 !important;
+}
+
+.recharts-tooltip-label {
+  color: white;
+}
+
+main > .recharts-wrapper .recharts-tooltip-item {
+  color: white !important;
+}
+
+.recharts-legend-item {
+  margin-bottom: 5px;
+}

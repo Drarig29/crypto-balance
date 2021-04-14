@@ -1,8 +1,8 @@
 import React from "react";
 
 const Checkbox = ({ label, isSelected, onCheckboxChange }) => (
-    <div>
-        <label style={{ color: 'white' }}>
+    <div style={{ color: 'white', marginBottom: 10 }}>
+        <label>
             <input
                 type="checkbox"
                 name={label}
