@@ -1,17 +1,12 @@
 import React, { useContext, useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
+import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-import { Legend } from 'recharts';
-import { Tooltip } from 'recharts';
-import { PieChart } from 'recharts';
-import { Pie } from 'recharts';
-import { Cell } from 'recharts';
-import { ResponsiveContainer } from 'recharts';
-import { toCurrency } from './helpers';
-import { Context } from '.';
+import { toCurrency } from '../helpers';
+import { Context } from '..';
 
-export default function ({ data }) {
+export const DonutChart = ({ data }) => {
     const [context] = useContext(Context);
 
     const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");

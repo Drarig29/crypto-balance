@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
-import DataContainer from './DataContainer';
+import { DataContainer } from './components/DataContainer';
 
 import './style.css';
 

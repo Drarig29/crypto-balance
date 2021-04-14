@@ -1,13 +1,13 @@
 import moment from 'moment';
 import React, { useContext, useEffect, useState } from 'react';
 
-import AreaChart from './AreaChart';
-import DatePicker from './DatePicker';
-import DougnutChart from './DougnutChart';
-import VisibilityButton from './VisibilityButton';
+import { AreaChart } from './AreaChart';
+import { DatePicker } from './DatePicker';
+import { DonutChart } from './DonutChart';
+import { VisibilityButton } from './VisibilityButton';
 
-import { toCurrency, toISOString } from './helpers';
-import { Context } from '.';
+import { toCurrency, toISOString } from '../helpers';
+import { Context } from '..';
 
 function Spinner({ visible }) {
     return <span className="spinner" style={{ visibility: visible ? 'visible' : 'hidden' }}></span>
@@ -25,7 +25,7 @@ function transformData(snapshots) {
     return transformed;
 }
 
-export default function () {
+export const DataContainer = () => {
     const [context, setContext] = useContext(Context);
 
     const [snapshots, setSnapshots] = useState([]);
@@ -92,7 +92,7 @@ export default function () {
                 </aside>
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
-            <DougnutChart data={currentSnapshot} />
+            <DonutChart data={currentSnapshot} />
         </>
     )
 }

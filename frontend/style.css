@@ -4,13 +4,6 @@ html {
   background-color: #042f3e;
 }
 
-.DayPickerInput input {
-  border-radius: 5px;
-  padding: 6px;
-  text-align: center;
-  width: 150px;
-}
-
 main {
   display: flex;
   flex-direction: column;
@@ -22,6 +15,12 @@ aside {
   right: 30px;
   color: #487280;
   font-size: 1.5em;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  margin-left: 40px;
 }
 
 .recharts-text {
@@ -39,12 +38,6 @@ aside {
 
 .recharts-responsive-container:nth-of-type(3) .recharts-tooltip-item {
   color: white !important;
-}
-
-header {
-  display: flex;
-  align-items: center;
-  margin-left: 40px;
 }
 
 .recharts-legend-item {
@@ -72,4 +65,39 @@ header {
 .reveal-button {
   margin-right: 12px;
   transform: translate(0, 4px);
+}
+
+.DayPickerInput input {
+  border-radius: 5px;
+  padding: 6px;
+  text-align: center;
+  width: 150px;
+}
+
+.InputFromTo
+  .DayPicker-Day--selected:not(.DayPicker-Day--start):not(.DayPicker-Day--end):not(.DayPicker-Day--outside) {
+  background-color: #f0f8ff !important;
+  color: #4a90e2;
+}
+
+.InputFromTo .DayPicker-Day {
+  border-radius: 0 !important;
+}
+
+.InputFromTo .DayPicker-Day--start {
+  border-top-left-radius: 50% !important;
+  border-bottom-left-radius: 50% !important;
+}
+
+.InputFromTo .DayPicker-Day--end {
+  border-top-right-radius: 50% !important;
+  border-bottom-right-radius: 50% !important;
+}
+
+.InputFromTo .DayPickerInput-Overlay {
+  width: 550px;
+}
+
+.InputFromTo-to .DayPickerInput-Overlay {
+  margin-left: -198px;
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function ({ initiallyRevealed, onRevealedChange }) {
+export const VisibilityButton = ({ initiallyRevealed, onRevealedChange }) => {
     const [revealed, setRevealed] = useState(initiallyRevealed);
     const src = revealed ? 'assets/visibility_off.svg' : 'assets/visibility.svg';
 

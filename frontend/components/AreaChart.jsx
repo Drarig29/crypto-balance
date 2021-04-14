@@ -1,21 +1,13 @@
 import React, { useContext, useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
-import Checkbox from './CheckBox';
+import { YAxis, Tooltip, Area, CartesianGrid, XAxis, AreaChart as Chart, Legend, ResponsiveContainer } from 'recharts';
 
-import { YAxis } from 'recharts';
-import { Tooltip } from 'recharts';
-import { Area } from 'recharts';
-import { CartesianGrid } from 'recharts';
-import { XAxis } from 'recharts';
-import { AreaChart } from 'recharts';
-import { Legend } from 'recharts';
-import { ResponsiveContainer } from 'recharts';
-import { toCurrency } from './helpers';
+import { Checkbox } from './CheckBox';
+import { toCurrency } from '../helpers';
+import { Context } from "..";
 
-import { Context } from ".";
-
-export default function ({ data, onDateClicked }) {
+export const AreaChart = ({ data, onDateClicked }) => {
     const [context] = useContext(Context);
 
     const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
@@ -47,7 +39,7 @@ export default function ({ data, onDateClicked }) {
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
             <ResponsiveContainer width="60%" height={500}>
-                <AreaChart data={data} onClick={handleDateClicked}>
+                <Chart data={data} onClick={handleDateClicked}>
                     <XAxis dataKey="time" />
                     <YAxis tickFormatter={value => toCurrency(value, context, 0)} />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -57,7 +49,7 @@ export default function ({ data, onDateClicked }) {
                         const color = `#${rainbow.colorAt(index)}`;
                         return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
                     })}
-                </AreaChart>
+                </Chart>
             </ResponsiveContainer>
         </>
     )
