@@ -4,16 +4,17 @@ import ReactDOM from 'react-dom';
 
 import AreaChart from './AreaChart';
 import DatePicker from './DatePicker';
+import DougnutChart from './DougnutChart';
 
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
         time: new Date(snapshot.time.$date).toDateString(),
         "Total as BTC": snapshot.total_asset_of_btc.value,
     }, ...snapshot.balances.map(balance => ({
-        [balance.asset]: balance.value && balance.value.toFixed(2)
+        [balance.asset]: balance.value
     }))));
 
-    console.log({ transformed });
+    console.log({ snapshots, transformed });
     return transformed;
 }
 
@@ -60,6 +61,7 @@ export default function () {
             <p>Data container</p>
             <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
             <AreaChart data={snapshots} />
+            <DougnutChart data={snapshots[snapshots.length - 1]} />
         </div>
     )
 }
