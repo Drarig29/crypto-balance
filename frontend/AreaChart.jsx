@@ -1,5 +1,4 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 
@@ -16,8 +15,21 @@ export default function ({ data }) {
     const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
+    const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
+    const [stacked, setStacked] = useState(true);
+
     const rainbow = new Rainbow();
     rainbow.setNumberRange(0, assets.length + 1);
+
+    const handleMouseEnter = (o) => {
+        const { dataKey } = o;
+        setThickness({ ...thickness, [dataKey]: 3 });
+    };
+
+    const handleMouseLeave = (o) => {
+        const { dataKey } = o;
+        setThickness({ ...thickness, [dataKey]: 1 });
+    };
 
     return (
         <ResponsiveContainer width="60%" height={500} >
@@ -26,10 +38,10 @@ export default function ({ data }) {
                 <YAxis />
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <Tooltip />
-                <Legend />
+                <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
                 {assets.map((name, index) => {
                     const color = `#${rainbow.colorAt(index)}`;
-                    return <Area key={index} type="monotone" dataKey={name} stackId="1" stroke={color} fill={color} />
+                    return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} strokeWidth={thickness[name]} stroke={color} fill={color} />
                 })}
             </AreaChart>
         </ResponsiveContainer>

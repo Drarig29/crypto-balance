@@ -1,6 +1,5 @@
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 
 import AreaChart from './AreaChart';
 import DatePicker from './DatePicker';
