@@ -5,6 +5,10 @@ import AreaChart from './AreaChart';
 import DatePicker from './DatePicker';
 import DougnutChart from './DougnutChart';
 
+function Spinner({ visible }) {
+    return <span className="spinner" style={{ visibility: visible ? 'visible' : 'hidden' }}></span>
+}
+
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
         time: new Date(snapshot.time.$date).toDateString(),
@@ -29,6 +33,8 @@ export default function () {
         to: moment().toDate(),
     });
 
+    const [loading, setLoading] = useState(false);
+
     useEffect(() => {
         console.log(dateRange);
 
@@ -49,15 +55,26 @@ export default function () {
             body,
         };
 
+        setLoading(true);
+
         fetch("http://127.0.0.1:8000/api", options)
             .then(response => response.json())
-            .then(snapshots => setSnapshots(transformData(snapshots)))
-            .catch(error => alert(error));
+            .then(snapshots => {
+                setLoading(false);
+                setSnapshots(transformData(snapshots));
+            })
+            .catch(error => {
+                setLoading(false);
+                alert(error);
+            });
     }, [dateRange]);
 
     return (
         <>
-            <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
+            <header>
+                <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
+                <Spinner visible={loading} />
+            </header>
             <AreaChart data={snapshots} />
             <DougnutChart data={snapshots[snapshots.length - 1]} />
         </>
