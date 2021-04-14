@@ -12,6 +12,9 @@ module.exports = {
     rules: [
       {
         test: /\.jsx?$/,
+        resolve: {
+          extensions: ['.js', '.jsx'],
+        },
         loader: 'esbuild-loader',
         options: {
           loader: 'jsx',
