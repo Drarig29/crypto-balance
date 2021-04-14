@@ -26,7 +26,6 @@ export default function ({ data }) {
             <Tooltip />
             {assets.map((name, index) => {
                 const color = `#${rainbow.colorAt(index)}`;
-                console.log(color);
                 return <Area key={index} type="monotone" dataKey={name} stackId="1" stroke={color} fill={color} />
             })}
         </AreaChart>

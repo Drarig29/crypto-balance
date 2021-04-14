@@ -5,24 +5,28 @@ import AreaChart from './AreaChart';
 
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
-        time: snapshot.time.$date,
+        time: new Date(snapshot.time.$date).toDateString(),
         "Total as BTC": snapshot.total_asset_of_btc.value,
     }, ...snapshot.balances.map(balance => ({
-        [balance.asset]: balance.value
+        [balance.asset]: balance.value.toFixed(2)
     }))));
 
     console.log(transformed);
     return transformed;
 }
 
+
 export default function () {
     const [snapshots, setSnapshots] = useState([]);
+
+    const [start, setStart] = useState("2021-04-01T00:00:00Z");
+    const [end, setEnd] = useState("2021-04-12T00:00:00Z");
 
     useEffect(() => {
         const body = JSON.stringify({
             "conversion": "EUR",
-            "start": "2021-04-08T00:00:00Z",
-            "end": "2021-04-12T00:00:00Z"
+            start,
+            end,
         });
 
         const headers = new Headers();
