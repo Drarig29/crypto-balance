@@ -4,6 +4,12 @@ import React, { useEffect, useState } from 'react';
 import AreaChart from './AreaChart';
 import DatePicker from './DatePicker';
 import DougnutChart from './DougnutChart';
+import { toISOString } from './helpers';
+
+const currency = {
+    name: 'EUR',
+    symbol: '€',
+}
 
 function Spinner({ visible }) {
     return <span className="spinner" style={{ visibility: visible ? 'visible' : 'hidden' }}></span>
@@ -21,10 +27,6 @@ function transformData(snapshots) {
     return transformed;
 }
 
-function toISOString(date) {
-    return date.toISOString().split('T')[0] + 'T00:00:00Z';
-}
-
 export default function () {
     const [snapshots, setSnapshots] = useState([]);
 
@@ -40,7 +42,7 @@ export default function () {
         console.log(dateRange);
 
         const body = JSON.stringify({
-            conversion: "EUR",
+            conversion: currency.name,
             start: toISOString(dateRange.from),
             end: toISOString(dateRange.to),
         });
@@ -77,8 +79,8 @@ export default function () {
                 <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
                 <Spinner visible={loading} />
             </header>
-            <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
-            <DougnutChart data={snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1]} />
+            <AreaChart currency={currency.symbol} data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
+            <DougnutChart currency={currency.symbol} data={snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1]} />
         </>
     )
 }

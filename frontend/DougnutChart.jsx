@@ -8,8 +8,9 @@ import { PieChart } from 'recharts';
 import { Pie } from 'recharts';
 import { Cell } from 'recharts';
 import { ResponsiveContainer } from 'recharts';
+import { toCurrency } from './helpers';
 
-export default function ({ data }) {
+export default function ({ data, currency }) {
     const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
@@ -40,7 +41,7 @@ export default function ({ data }) {
                         return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
                     })}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={value => toCurrency(value, currency)} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
             </PieChart>
         </ResponsiveContainer>

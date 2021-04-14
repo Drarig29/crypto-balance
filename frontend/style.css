@@ -30,7 +30,7 @@ main {
   color: white;
 }
 
-main > .recharts-wrapper .recharts-tooltip-item {
+.recharts-responsive-container:nth-of-type(3) .recharts-tooltip-item {
   color: white !important;
 }
 

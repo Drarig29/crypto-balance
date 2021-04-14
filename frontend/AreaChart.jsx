@@ -11,8 +11,9 @@ import { XAxis } from 'recharts';
 import { AreaChart } from 'recharts';
 import { Legend } from 'recharts';
 import { ResponsiveContainer } from 'recharts';
+import { toCurrency } from './helpers';
 
-export default function ({ data, onDateClicked }) {
+export default function ({ data, currency, onDateClicked }) {
     const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
@@ -44,9 +45,9 @@ export default function ({ data, onDateClicked }) {
             <ResponsiveContainer width="60%" height={500}>
                 <AreaChart data={data} onClick={handleDateClicked}>
                     <XAxis dataKey="time" />
-                    <YAxis />
+                    <YAxis tickFormatter={value => toCurrency(value, currency, 0)} />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <Tooltip />
+                    <Tooltip formatter={value => toCurrency(value, currency)} />
                     <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
                     {assets.map((name, index) => {
                         const color = `#${rainbow.colorAt(index)}`;
