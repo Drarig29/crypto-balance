@@ -9,9 +9,9 @@
     "main": "frontend/index.js",
     "scripts": {
         "build:backend": "cargo build",
-        "build:frontend": "esbuild --bundle frontend/index.jsx --outfile=static/assets/bundle.js --loader:.js=jsx --minify",
+        "build:frontend": "esbuild --bundle frontend/index.jsx --outfile=static/dist/bundle.js --loader:.js=jsx --minify",
         "build": "npm run build:backend && npm install && npm run build:frontend",
-        "dev": "esbuild --bundle frontend/index.jsx --outfile=static/assets/bundle.js --loader:.js=jsx --watch",
+        "dev": "esbuild --bundle frontend/index.jsx --outfile=static/dist/bundle.js --loader:.js=jsx --watch",
         "start": "cargo run"
     },
     "author": "Corentin Girard <corentingirard.dev@gmail.com>",
