@@ -58,7 +58,7 @@ export default function ({ initialRange, onRangeChange }) {
                     parseDate={parseDate}
                     dayPickerProps={{
                         selectedDays: [from, { from, to }],
-                        disabledDays: { before: from },
+                        disabledDays: { before: from, after: new Date() },
                         modifiers,
                         month: from,
                         fromMonth: from,
