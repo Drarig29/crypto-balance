@@ -23,6 +23,7 @@
     },
     "dependencies": {
         "css-loader": "^5.2.1",
+        "rainbowvis.js": "^1.0.1",
         "recharts": "^2.0.9",
         "style-loader": "^2.0.0"
     }

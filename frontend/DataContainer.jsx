@@ -11,7 +11,7 @@ function transformData(snapshots) {
         [balance.asset]: balance.value
     }))));
 
-    console.debug(transformed);
+    console.log(transformed);
     return transformed;
 }
 
