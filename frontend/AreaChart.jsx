@@ -12,7 +12,7 @@ import { AreaChart } from 'recharts';
 import { Legend } from 'recharts';
 import { ResponsiveContainer } from 'recharts';
 
-export default function ({ data }) {
+export default function ({ data, onDateClicked }) {
     const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
@@ -32,12 +32,17 @@ export default function ({ data }) {
         setThickness({ ...thickness, [dataKey]: 1 });
     };
 
+    const handleDateClicked = (payload) => {
+        const { activeTooltipIndex } = payload;
+        onDateClicked(activeTooltipIndex);
+    }
+
     return (
         <>
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
             <ResponsiveContainer width="60%" height={500} >
-                <AreaChart data={data}>
+                <AreaChart data={data} onClick={handleDateClicked}>
                     <XAxis dataKey="time" />
                     <YAxis />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />

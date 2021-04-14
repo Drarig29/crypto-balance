@@ -34,6 +34,7 @@ export default function () {
     });
 
     const [loading, setLoading] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(null);
 
     useEffect(() => {
         console.log(dateRange);
@@ -56,6 +57,7 @@ export default function () {
         };
 
         setLoading(true);
+        setSelectedIndex(null);
 
         fetch("http://127.0.0.1:8000/api", options)
             .then(response => response.json())
@@ -75,8 +77,8 @@ export default function () {
                 <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
                 <Spinner visible={loading} />
             </header>
-            <AreaChart data={snapshots} />
-            <DougnutChart data={snapshots[snapshots.length - 1]} />
+            <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
+            <DougnutChart data={snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1]} />
         </>
     )
 }
