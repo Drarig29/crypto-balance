@@ -23,7 +23,10 @@
     },
     "dependencies": {
         "css-loader": "^5.2.1",
+        "moment": "^2.29.1",
         "rainbowvis.js": "^1.0.1",
+        "react-day-picker": "^7.4.10",
+        "react-helmet": "^6.1.0",
         "recharts": "^2.0.9",
         "style-loader": "^2.0.0"
     }

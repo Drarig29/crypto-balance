@@ -3,15 +3,21 @@ lockfileVersion: 5.3
 specifiers:
   css-loader: ^5.2.1
   esbuild: ^0.11.10
+  moment: ^2.29.1
   rainbowvis.js: ^1.0.1
   react: ^17.0.1
+  react-day-picker: ^7.4.10
   react-dom: ^17.0.1
+  react-helmet: ^6.1.0
   recharts: ^2.0.9
   style-loader: ^2.0.0
 
 dependencies:
   css-loader: 5.2.1
+  moment: 2.29.1
   rainbowvis.js: 1.0.1
+  react-day-picker: 7.4.10_react@17.0.1
+  react-helmet: 6.1.0_react@17.0.1
   recharts: 2.0.9_react-dom@17.0.1+react@17.0.1
   style-loader: 2.0.0
 
@@ -279,6 +285,10 @@ packages:
     resolution: {integrity: sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==}
     dev: false
 
+  /moment/2.29.1:
+    resolution: {integrity: sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==}
+    dev: false
+
   /nanoid/3.1.22:
     resolution: {integrity: sha512-/2ZUaJX2ANuLtTvqTlgqBQNJoQO398KyJgZloL0PZkC0dpysjncRUPsFe3DUPzz/y3h+u7C46np8RMuvF3jsSQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -366,7 +376,7 @@ packages:
     dependencies:
       loose-envify: 1.4.0
       object-assign: 4.1.1
-      react-is: 16.10.2
+      react-is: 16.13.1
     dev: false
 
   /punycode/2.1.1:
@@ -384,6 +394,15 @@ packages:
     resolution: {integrity: sha1-6JmPuXFhsCVXdIx9oJeWKw1uPgA=}
     dev: false
 
+  /react-day-picker/7.4.10_react@17.0.1:
+    resolution: {integrity: sha512-/QkK75qLKdyLmv0kcVzhL7HoJPazoZXS8a6HixbVoK6vWey1Od1WRLcxfyEiUsRfccAlIlf6oKHShqY2SM82rA==}
+    peerDependencies:
+      react: ~0.13.x || ~0.14.x || ^15.0.0 || ^16.0.0 || ^17.0.0
+    dependencies:
+      prop-types: 15.7.2
+      react: 17.0.1
+    dev: false
+
   /react-dom/17.0.1_react@17.0.1:
     resolution: {integrity: sha512-6eV150oJZ9U2t9svnsspTMrWNyHc6chX0KzDeAOXftRa8bNeOKTTfCJ7KorIwenkHd2xqVTBTCZd79yk/lx/Ug==}
     peerDependencies:
@@ -395,8 +414,28 @@ packages:
       scheduler: 0.20.1
     dev: true
 
+  /react-fast-compare/3.2.0:
+    resolution: {integrity: sha512-rtGImPZ0YyLrscKI9xTpV8psd6I8VAtjKCzQDlzyDvqJA8XOW78TXYQwNRNd8g8JZnDu8q9Fu/1v4HPAVwVdHA==}
+    dev: false
+
+  /react-helmet/6.1.0_react@17.0.1:
+    resolution: {integrity: sha512-4uMzEY9nlDlgxr61NL3XbKRy1hEkXmKNXhjbAIOVw5vcFrsdYbH2FEwcNyWvWinl103nXgzYNlns9ca+8kFiWw==}
+    peerDependencies:
+      react: '>=16.3.0'
+    dependencies:
+      object-assign: 4.1.1
+      prop-types: 15.7.2
+      react: 17.0.1
+      react-fast-compare: 3.2.0
+      react-side-effect: 2.1.1_react@17.0.1
+    dev: false
+
   /react-is/16.10.2:
     resolution: {integrity: sha512-INBT1QEgtcCCgvccr5/86CfD71fw9EPmDxgiJX4I2Ddr6ZsV6iFXsuby+qWJPtmNuMY0zByTsG4468P7nHuNWA==}
+    dev: false
+
+  /react-is/16.13.1:
+    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
     dev: false
 
   /react-lifecycles-compat/3.0.4:
@@ -415,6 +454,14 @@ packages:
       react: 17.0.1
       react-dom: 17.0.1_react@17.0.1
       resize-observer-polyfill: 1.5.1
+    dev: false
+
+  /react-side-effect/2.1.1_react@17.0.1:
+    resolution: {integrity: sha512-2FoTQzRNTncBVtnzxFOk2mCpcfxQpenBMbk5kSVBg5UcPqV9fRbgY2zhb7GTWWOlpFmAxhClBDlIq8Rsubz1yQ==}
+    peerDependencies:
+      react: ^16.3.0 || ^17.0.0
+    dependencies:
+      react: 17.0.1
     dev: false
 
   /react-smooth/2.0.0_react-dom@17.0.1+react@17.0.1:
