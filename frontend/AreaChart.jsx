@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
+import Checkbox from './CheckBox';
 
 import { YAxis } from 'recharts';
 import { Tooltip } from 'recharts';
@@ -32,18 +33,21 @@ export default function ({ data }) {
     };
 
     return (
-        <ResponsiveContainer width="60%" height={500} >
-            <AreaChart data={data}>
-                <XAxis dataKey="time" />
-                <YAxis />
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <Tooltip />
-                <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
-                {assets.map((name, index) => {
-                    const color = `#${rainbow.colorAt(index)}`;
-                    return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} strokeWidth={thickness[name]} stroke={color} fill={color} />
-                })}
-            </AreaChart>
-        </ResponsiveContainer>
+        <>
+            <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
+            <ResponsiveContainer width="60%" height={500} >
+                <AreaChart data={data}>
+                    <XAxis dataKey="time" />
+                    <YAxis />
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                    <Tooltip />
+                    <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+                    {assets.map((name, index) => {
+                        const color = `#${rainbow.colorAt(index)}`;
+                        return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
+                    })}
+                </AreaChart>
+            </ResponsiveContainer>
+        </>
     )
 }

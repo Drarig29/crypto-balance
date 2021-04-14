@@ -20,7 +20,7 @@ export default function ({ data }) {
 
     return (
         <PieChart width={300} height={300} margin={{ left: 50, right: 50 }}>
-            <Pie data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={50} >
+            <Pie data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={50} paddingAngle={5}>
                 {values.map((_, index) => {
                     const color = `#${rainbow.colorAt(index)}`;
                     return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} />
