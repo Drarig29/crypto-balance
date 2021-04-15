@@ -1,6 +1,6 @@
 # Crypto Balance
 
-A web application made with Rust and [Preact](https://github.com/preactjs/preact).
+A web application made with Rust and React.
 
 ## Back-end
 
@@ -51,7 +51,7 @@ Go [here](https://p.nomics.com/cryptocurrency-bitcoin-api) to know how to create
 
 ## Front-end
 
-- Uses Preact (a light-weight React) to make the UI.
+- Uses React to make the UI.
 - Charts are made with [Recharts](https://recharts.org/en-US/)
 - Built with [esbuild](https://esbuild.github.io/)
 

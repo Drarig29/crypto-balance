@@ -3,4 +3,3 @@
 - [ ] Rewrite everything with async/await (Rocket, reqwest, mongodb)
 - [ ] Add delay between Nomics requests as it seems to hit a rate-limit with splitted requests after 2 requests (the 3rd fails)
 - [ ] Lint the JavaScript
-- [ ] Try to use Preact

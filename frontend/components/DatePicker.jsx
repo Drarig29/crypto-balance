@@ -1,6 +1,4 @@
-import { h } from "preact";
-import { useRef, useState } from "preact/hooks";
-
+import React, { useRef, useState } from 'react';
 import moment from 'moment';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -11,7 +9,7 @@ import { formatDate, parseDate } from 'react-day-picker/moment';
 export const DatePicker = ({ initialRange, onRangeChange }) => {
     const [from, setFrom] = useState(initialRange.from);
     const [to, setTo] = useState(initialRange.to);
-    const toPickerRef = useRef(null);
+    const toPickerRef = useRef();
 
     const showFromMonth = () => {
         if (!from) return;

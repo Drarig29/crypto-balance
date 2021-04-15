@@ -1,5 +1,4 @@
-import { h, Fragment } from 'preact';
-import { useContext, useState } from "preact/hooks";
+import React, { useContext, useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 import { YAxis, Tooltip, Area, CartesianGrid, XAxis, AreaChart as Chart, Legend, ResponsiveContainer } from 'recharts';

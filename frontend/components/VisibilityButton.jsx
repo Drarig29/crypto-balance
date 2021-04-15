@@ -1,5 +1,4 @@
-import { h } from "preact";
-import { useState } from "preact/hooks";
+import React, { useState } from 'react';
 
 export const VisibilityButton = ({ initiallyRevealed, onRevealedChange }) => {
     const [revealed, setRevealed] = useState(initiallyRevealed);
