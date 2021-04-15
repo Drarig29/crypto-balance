@@ -24,6 +24,7 @@ esbuild
         jsxFragment: 'Fragment',
         watch: isDev,
         minify: !isDev,
+        sourcemap: true,
         logLevel: 'info',
         plugins: [preactCompatPlugin],
     })

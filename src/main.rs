@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate rocket;
 extern crate chrono;
+extern crate dotenv;
 extern crate hex;
 extern crate hmac;
 extern crate mongodb;
@@ -10,6 +11,8 @@ extern crate rocket_contrib;
 extern crate serde;
 extern crate serde_json;
 extern crate sha2;
+
+use dotenv::dotenv;
 
 mod model;
 use bson::Bson;
@@ -41,10 +44,14 @@ use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
-struct Auth {
+struct Environment {
     binance_key: String,
     binance_secret: String,
     nomics_key: String,
+    mongodb_host: String,
+    mongodb_port: String,
+    mongodb_username: String,
+    mongodb_password: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -62,7 +69,6 @@ struct TimeSpan {
 
 const BINANCE_API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
 const NOMICS_API_BASE_URL: &str = "https://api.nomics.com/v1/currencies/sparkline";
-const MONGODB_URL: &str = "mongodb://root:example@127.0.0.1:27017";
 
 const ACCOUNT_TYPE_SPOT: &str = "SPOT";
 const ACCOUNT_TYPE_MARGIN: &str = "MARGIN";
@@ -73,15 +79,23 @@ fn index() -> io::Result<NamedFile> {
     NamedFile::open("static/index.html")
 }
 
-fn get_env_vars() -> Result<Auth, VarError> {
+fn get_env_vars() -> Result<Environment, VarError> {
     let binance_key = env::var("BINANCE_API_KEY")?;
     let binance_secret = env::var("BINANCE_API_SECRET")?;
     let nomics_key = env::var("NOMICS_API_KEY")?;
+    let mongodb_host = env::var("MONGODB_HOST")?;
+    let mongodb_port = env::var("MONGODB_PORT")?;
+    let mongodb_username = env::var("MONGODB_USERNAME")?;
+    let mongodb_password = env::var("MONGODB_PASSWORD")?;
 
-    Ok(Auth {
+    Ok(Environment {
         binance_key,
         binance_secret,
         nomics_key,
+        mongodb_host,
+        mongodb_port,
+        mongodb_username,
+        mongodb_password,
     })
 }
 
@@ -226,7 +240,7 @@ fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
 }
 
 fn get_api_snapshots(
-    auth: &Auth,
+    auth: &Environment,
     account_type: &str,
     limit: u8,
     start: DateTime<Utc>,
@@ -310,7 +324,7 @@ fn get_api_snapshots(
 }
 
 fn get_api_history(
-    auth: &Auth,
+    auth: &Environment,
     ids: Vec<String>,
     convert: String,
     start: DateTime<Utc>,
@@ -545,7 +559,20 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         .unwrap()
         .with_timezone(&Utc);
 
-    let client = mongodb::sync::Client::with_uri_str(MONGODB_URL).unwrap();
+    let env_variables = match get_env_vars() {
+        Ok(res) => res,
+        Err(err) => return content::Json(err.to_string()),
+    };
+
+    let mongodb_url = format!(
+        "mongodb://{}:{}@{}:{}",
+        env_variables.mongodb_username,
+        env_variables.mongodb_password,
+        env_variables.mongodb_host,
+        env_variables.mongodb_port,
+    );
+
+    let client = mongodb::sync::Client::with_uri_str(&mongodb_url).unwrap();
     let database = client.database("crypto-balance");
 
     let available_snapshots = get_database_snapshots(&database, start, end);
@@ -556,11 +583,6 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
         return content::Json(result);
     }
-
-    let env_variables = match get_env_vars() {
-        Ok(res) => res,
-        Err(err) => return content::Json(err.to_string()),
-    };
 
     let split_by_30_days = split_all_timespans_max_days(&needed_timespans, 30);
 
@@ -596,6 +618,8 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 fn main() {
+    dotenv().ok();
+
     rocket::ignite()
         .mount("/", routes![index, api, files])
         .launch();
