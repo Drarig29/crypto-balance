@@ -59,6 +59,27 @@ You can see an area chart with all your cryptocurrencies in the same chart. And 
 
 ![Demo of the front-end](demo.gif)
 
+## Usage
+
+You can use this web application with `docker-compose`.
+
+Edit the `.env` file at the root of the project with your personal API keys.
+
+Once done, simply do the following:
+
+```bash
+docker-compose build
+docker-compose up -d
+```
+
+This will start `mongo` (the database), `mongo-express` (a web interface to manage the database) and `crypto-balance`.
+
+You can access:
+
+- The database via the port 27017
+- The web interface via http://127.0.0.1:8081/
+- The web application via http://127.0.0.1/
+
 ## TODO
 
 See the [TODO list](TODO.md).
