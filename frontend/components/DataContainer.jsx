@@ -62,7 +62,7 @@ export const DataContainer = () => {
         setLoading(true);
         setSelectedIndex(null);
 
-        fetch("http://127.0.0.1:8000/api", options)
+        fetch("/api", options)
             .then(response => response.json())
             .then(snapshots => {
                 setLoading(false);
