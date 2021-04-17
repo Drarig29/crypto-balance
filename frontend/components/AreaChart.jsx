@@ -14,7 +14,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
     const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
-    const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
+    const [thickness, setThickness] = useState(Object.fromEntries([...assets, 'Total as BTC'].map(asset => [asset, 1])));
     const [stacked, setStacked] = useState(true);
 
     const rainbow = new Rainbow();
@@ -52,7 +52,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
                         return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
                     })}
 
-                    {stacked && <Area type="monotone" dataKey="Total as BTC" strokeWidth={1} strokeDasharray="3 3" stroke="red" fill="transparent" />}
+                    {stacked && <Area type="monotone" dataKey="Total as BTC" strokeWidth={thickness['Total as BTC']} strokeDasharray="3 3" stroke="red" fill="transparent" />}
                 </Chart>
             </ResponsiveContainer>
         </>
