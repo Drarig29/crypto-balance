@@ -13,3 +13,7 @@ export function toCurrency(value, context, digits = 2) {
 
     return amount.replace(/\d/g, '-');
 }
+
+export function toPercentage(percent) {
+    return `${(percent * 100).toFixed(2)} %`;
+}

@@ -11,7 +11,9 @@ export const DonutChart = ({ label, data }) => {
     const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
 
-    const values = assets.map(asset => ({ name: asset, value: data[asset] }));
+    const total = data && data["Total as BTC"];
+
+    const values = assets.map(asset => ({ name: asset, value: data[asset], percent: data[asset] / total }));
     console.log({ values });
 
     const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
