@@ -469,7 +469,7 @@ fn get_computed_snapshots(
             "$match": {
               "time": {
                 "$gte": Bson::DateTime(start),
-                "$lt": Bson::DateTime(end)
+                "$lte": Bson::DateTime(end)
               }
             }
           },
