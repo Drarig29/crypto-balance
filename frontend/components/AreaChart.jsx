@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 import { YAxis, Tooltip, Area, CartesianGrid, XAxis, AreaChart as Chart, Legend, ResponsiveContainer } from 'recharts';
@@ -11,8 +11,7 @@ import { CustomTooltip } from './CustomTooltip';
 export const AreaChart = ({ data, onDateClicked }) => {
     const [context] = useContext(Context);
 
-    const assets = (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time");
-    console.log({ assets });
+    const assets = useMemo(() => (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
 
     const [thickness, setThickness] = useState(Object.fromEntries([...assets, 'Total as BTC'].map(asset => [asset, 1])));
     const [stacked, setStacked] = useState(true);

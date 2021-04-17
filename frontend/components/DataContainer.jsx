@@ -21,7 +21,7 @@ function transformData(snapshots) {
         [balance.asset]: balance.value
     }))));
 
-    console.log({ snapshots, transformed });
+    console.debug({ snapshots, transformed });
     return transformed;
 }
 
@@ -38,7 +38,7 @@ export const DataContainer = () => {
     });
 
     useEffect(() => {
-        console.log(dateRange);
+        console.debug(dateRange);
 
         const body = JSON.stringify({
             conversion: context.currency.name,
@@ -46,7 +46,7 @@ export const DataContainer = () => {
             end: toISOString(dateRange.to),
         });
 
-        console.log({ body });
+        console.debug({ body });
 
         const headers = new Headers();
         headers.append("Content-Type", "application/json");

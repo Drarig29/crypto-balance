@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -6,16 +6,11 @@ import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recha
 import { CustomTooltip } from './CustomTooltip';
 
 export const DonutChart = ({ label, data }) => {
-    const [showLabel, setShowLabel] = useState(false);
-
-    const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");
-    console.log({ assets });
-
+    const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
     const total = data && data["Total as BTC"];
+    const values = useMemo(() => assets.map(asset => ({ name: asset, value: data[asset], percent: data[asset] / total })), [assets]);
 
-    const values = assets.map(asset => ({ name: asset, value: data[asset], percent: data[asset] / total }));
-    console.log({ values });
-
+    const [showLabel, setShowLabel] = useState(false);
     const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
 
     const rainbow = new Rainbow();
