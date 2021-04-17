@@ -45,10 +45,13 @@ export const AreaChart = ({ data, onDateClicked }) => {
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <Tooltip formatter={value => toCurrency(value, context)} />
                     <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+
                     {assets.map((name, index) => {
                         const color = `#${rainbow.colorAt(index)}`;
                         return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
                     })}
+
+                    {stacked && <Area type="monotone" dataKey="Total as BTC" strokeWidth={1} strokeDasharray="3 3" stroke="red" fill="transparent" />}
                 </Chart>
             </ResponsiveContainer>
         </>
