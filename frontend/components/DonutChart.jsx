@@ -6,8 +6,9 @@ import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recha
 import { toCurrency } from '../helpers';
 import { Context } from '..';
 
-export const DonutChart = ({ data }) => {
+export const DonutChart = ({ label, data }) => {
     const [context] = useContext(Context);
+    const [showLabel, setShowLabel] = useState(false);
 
     const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");
     console.log({ assets });
@@ -33,7 +34,7 @@ export const DonutChart = ({ data }) => {
     return (
         <ResponsiveContainer width="60%" height={300} margin={{ left: 50, right: 50 }}>
             <PieChart>
-                <Pie data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={50} paddingAngle={5}>
+                <Pie animationDuration={1000} onAnimationEnd={() => setShowLabel(true)} data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={75} paddingAngle={5}>
                     {values.map((value, index) => {
                         const color = `#${rainbow.colorAt(index)}`;
                         return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
@@ -41,6 +42,9 @@ export const DonutChart = ({ data }) => {
                 </Pie>
                 <Tooltip formatter={value => toCurrency(value, context)} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+                {showLabel && <text className="recharts-text" x="50%" y="50%" textAnchor="middle" dy={-6} fill="white">
+                    {label}
+                </text>}
             </PieChart>
         </ResponsiveContainer>
     )

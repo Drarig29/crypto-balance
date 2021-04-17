@@ -92,7 +92,7 @@ export const DataContainer = () => {
                 </aside>
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
-            <DonutChart data={currentSnapshot} />
+            <DonutChart data={currentSnapshot} label={currentSnapshot && currentSnapshot.time} />
         </>
     )
 }
