@@ -6,6 +6,7 @@ import { YAxis, Tooltip, Area, CartesianGrid, XAxis, AreaChart as Chart, Legend,
 import { Checkbox } from './CheckBox';
 import { toCurrency } from '../helpers';
 import { Context } from "..";
+import { CustomTooltip } from './CustomTooltip';
 
 export const AreaChart = ({ data, onDateClicked }) => {
     const [context] = useContext(Context);
@@ -43,7 +44,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
                     <XAxis dataKey="time" />
                     <YAxis tickFormatter={value => toCurrency(value, context, 0)} />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <Tooltip formatter={value => toCurrency(value, context)} />
+                    <Tooltip content={CustomTooltip} />
                     <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
 
                     {assets.map((name, index) => {

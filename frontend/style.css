@@ -28,17 +28,28 @@ header {
   fill: #5a6164;
 }
 
-.recharts-default-tooltip {
-  background-color: #042f3ece !important;
-  border-color: #548fa5 !important;
+.custom-tooltip {
+  margin: 0px;
+  padding: 10px;
+  background-color: #042f3ece;
+  border: 1px solid #548fa5;
+  white-space: nowrap;
 }
 
 .recharts-tooltip-label {
+  margin: 0;
   color: white;
 }
 
-.recharts-responsive-container:nth-of-type(3) .recharts-tooltip-item {
-  color: white !important;
+.recharts-tooltip-item-list {
+  padding: 0;
+  margin: 0;
+}
+
+.recharts-tooltip-item {
+  display: block;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .recharts-legend-item {

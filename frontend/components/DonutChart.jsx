@@ -1,13 +1,11 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 
 import Rainbow from 'rainbowvis.js';
 import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-import { toCurrency } from '../helpers';
-import { Context } from '..';
+import { CustomTooltip } from './CustomTooltip';
 
 export const DonutChart = ({ label, data }) => {
-    const [context] = useContext(Context);
     const [showLabel, setShowLabel] = useState(false);
 
     const assets = (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time");
@@ -40,7 +38,7 @@ export const DonutChart = ({ label, data }) => {
                         return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
                     })}
                 </Pie>
-                <Tooltip formatter={value => toCurrency(value, context)} />
+                <Tooltip content={CustomTooltip} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
                 <text className="recharts-text" x="50%" y="50%" textAnchor="middle" dy={-6} fill="white" style={showLabel ?
                     {
