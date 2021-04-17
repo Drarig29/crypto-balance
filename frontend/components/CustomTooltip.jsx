@@ -9,7 +9,8 @@ export const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
             <div className="custom-tooltip">
-                <p className="recharts-tooltip-label">{label}</p>
+                {label && <p className="recharts-tooltip-label">{label}</p>}
+
                 <ul className="recharts-tooltip-item-list">
                     {payload.map((item, index) => (
                         <li key={index} className="recharts-tooltip-item" style={{ color: item.stroke || item.payload.stroke }}>
