@@ -11,7 +11,7 @@ export const DatePicker = ({ initialRange, onRangeChange }) => {
     const [to, setTo] = useState(initialRange.to);
     const toPickerRef = useRef();
 
-    const showFromMonth = () => {
+    const updateFromMonth = () => {
         if (!from) return;
         if (moment(to).diff(moment(from), 'months') < 2) {
             toPickerRef.current.getDayPicker().showMonth(from);
@@ -20,11 +20,12 @@ export const DatePicker = ({ initialRange, onRangeChange }) => {
 
     const handleFromChange = (from) => {
         setFrom(from);
+        onRangeChange(from, to);
     }
 
     const handleToChange = (to) => {
         setTo(to);
-        showFromMonth();
+        updateFromMonth();
         onRangeChange(from, to);
     }
 
@@ -45,7 +46,6 @@ export const DatePicker = ({ initialRange, onRangeChange }) => {
                     toMonth: to,
                     modifiers,
                     numberOfMonths: 2,
-                    onDayClick: () => toPickerRef.current.getInput().focus(),
                 }}
                 onDayChange={handleFromChange}
             />
