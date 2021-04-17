@@ -42,9 +42,14 @@ export const DonutChart = ({ label, data }) => {
                 </Pie>
                 <Tooltip formatter={value => toCurrency(value, context)} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
-                {showLabel && <text className="recharts-text" x="50%" y="50%" textAnchor="middle" dy={-6} fill="white">
-                    {label}
-                </text>}
+                <text className="recharts-text" x="50%" y="50%" textAnchor="middle" dy={-6} fill="white" style={showLabel ?
+                    {
+                        opacity: 1,
+                        transition: 'opacity 0.5s ease 0s'
+                    } : {
+                        opacity: 0,
+                    }
+                }>{label}</text>
             </PieChart>
         </ResponsiveContainer>
     )
