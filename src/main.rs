@@ -15,11 +15,14 @@ extern crate sha2;
 use dotenv::dotenv;
 
 mod model;
-use bson::Bson;
 use model::binance;
 use model::database;
 use model::nomics;
 
+mod aggregate;
+use aggregate::make_aggregate_query;
+
+use bson::Bson;
 use mongodb::bson::doc;
 use mongodb::options::FindOptions;
 use mongodb::{bson, sync::Database};
@@ -456,94 +459,13 @@ fn get_computed_snapshots(
 ) -> Vec<database::ComputedSnapshot> {
     let collection = database.collection("snapshots");
 
-    let computed_snapshots: Vec<database::ComputedSnapshot> = collection.aggregate(vec![
-        doc!{
-            "$lookup": {
-              "from": "history",
-              "localField": "time",
-              "foreignField": "time",
-              "as": "prices"
-            }
-          },
-          doc!{
-            "$match": {
-              "time": {
-                "$gte": Bson::DateTime(start),
-                "$lte": Bson::DateTime(end)
-              }
-            }
-          },
-          doc!{
-            "$project": {
-              "time": 1,
-              "total_asset_of_btc": {
-                "amount": "$total_asset_of_btc",
-                "price": {
-                  "$first": {
-                    "$filter": {
-                      "input": "$prices",
-                      "as": "price",
-                      "cond": {
-                        "$eq": ["$$price.asset", "BTC"]
-                      }
-                    }
-                  }
-                }
-              },
-              "together": {
-                "$map": {
-                  "input": "$balances",
-                  "as": "balance",
-                  "in": {
-                    "balance": "$$balance",
-                    "price": {
-                      "$first": {
-                        "$filter": {
-                          "input": "$prices",
-                          "as": "price",
-                          "cond": {
-                            "$eq": ["$$price.asset", "$$balance.asset"]
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          doc!{
-            "$project": {
-              "time": 1,
-              "total_asset_of_btc": {
-                "asset": "BTC",
-                "amount": "$total_asset_of_btc.amount",
-                "price": "$total_asset_of_btc.price.price",
-                "value": {
-                  "$multiply": ["$total_asset_of_btc.amount", "$total_asset_of_btc.price.price"]
-                }
-              },
-              "balances": {
-                "$map": {
-                  "input": "$together",
-                  "as": "pair",
-                  "in": {
-                    "asset": "$$pair.balance.asset",
-                    "amount": "$$pair.balance.amount",
-                    "price": "$$pair.price.price",
-                    "value": {
-                      "$multiply": ["$$pair.balance.amount", "$$pair.price.price"]
-                    }
-                  }
-                }
-              }
-            }
-          }
-    ], None).unwrap()
-    .into_iter()
-    .flatten()
-    .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
-    .collect();
+    let computed_snapshots: Vec<database::ComputedSnapshot> = collection
+        .aggregate(make_aggregate_query(start, end), None)
+        .unwrap()
+        .into_iter()
+        .flatten()
+        .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
+        .collect();
 
     computed_snapshots
 }

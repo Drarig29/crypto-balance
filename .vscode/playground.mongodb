@@ -22,6 +22,19 @@ db.snapshots.find({
 
 db.snapshots.aggregate([
   {
+    $match: {
+      time: {
+        $gte: ISODate("2021-03-15T00:00:00Z"),
+        $lte: ISODate("2021-03-18T00:00:00Z")
+      }
+    }
+  },
+  {
+    $sort: {
+      time: 1
+    }
+  },
+  {
     $lookup: {
       from: 'history',
       localField: 'time',
@@ -30,77 +43,72 @@ db.snapshots.aggregate([
     }
   },
   {
-    $match: {
-      time: {
-        $gte: ISODate("2021-02-02T00:00:00Z"),
-        $lte: ISODate("2021-02-02T00:00:00Z")
-      }
-    }
-  },
-  /*{
     $project: {
       time: 1,
       total_asset_of_btc: {
-        amount: "$total_asset_of_btc",
-        price: {
-          $first: {
-            $filter: {
-              input: "$prices",
-              as: "price",
-              cond: {
-                $eq: ["$$price.asset", "BTC"]
+        $mergeObjects: [
+          {
+            asset: "BTC",
+            amount: "$total_asset_of_btc",
+          },
+          {
+            $let: {
+              vars: {
+                found: {
+                  $first: {
+                    $filter: {
+                      input: "$prices",
+                      as: "price",
+                      cond: {
+                        $eq: ["$$price.asset", "BTC"]
+                      }
+                    }
+                  }
+                }
+              },
+              in: {
+                price: "$$found.price",
+                value: { $multiply: ["$total_asset_of_btc", "$$found.price"] }
               }
             }
           }
-        }
+        ]
       },
-      together: {
+      balances: {
         $map: {
           input: "$balances",
           as: "balance",
           in: {
-            balance: "$$balance",
-            price: {
-              $first: {
-                $filter: {
-                  input: "$prices",
-                  as: "price",
-                  cond: {
-                    $eq: ["$$price.asset", "$$balance.asset"]
+            $mergeObjects: [
+              {
+                asset: "$$balance.asset",
+                amount: "$$balance.amount",
+              },
+              {
+                $let: {
+                  vars: {
+                    found: {
+                      $first: {
+                        $filter: {
+                          input: "$prices",
+                          as: "price",
+                          cond: {
+                            $eq: ["$$price.asset", "$$balance.asset"]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  in: {
+                    price: "$$found.price",
+                    value: { $multiply: ["$$balance.amount", "$$found.price"] }
                   }
                 }
               }
-            }
+            ]
           }
         }
       }
     }
-  },
-  {
-    $project: {
-      time: 1,
-      total_asset_of_btc: {
-        asset: "BTC",
-        amount: "$total_asset_of_btc.amount",
-        price: "$total_asset_of_btc.price.price",
-        value: {
-          $multiply: ["$total_asset_of_btc.amount", "$total_asset_of_btc.price.price"]
-        }
-      },
-      balances: {
-        $map: {
-          input: "$together",
-          as: "pair",
-          in: {
-            asset: "$$pair.balance.asset",
-            amount: "$$pair.balance.amount",
-            price: "$$pair.price.price",
-            value: {
-              $multiply: ["$$pair.balance.amount", "$$pair.price.price"]
-            }
-          }
-        }
-      }
-    }
-  }*/
+  }
 ]);
