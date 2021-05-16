@@ -4,7 +4,7 @@ services:
 
   mongo:
     image: mongo
-    restart: always
+    restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: crypto-balance
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
