@@ -4,3 +4,5 @@
 - [ ] Add delay between Nomics requests as it seems to hit a rate-limit with splitted requests after 2 requests (the 3rd fails)
 - [ ] Lint the JavaScript
 - [ ] Add authentication
+- [ ] Handle errors client-side
+- [ ] Send errors server-side (mongodb connection, rate limit, etc.)

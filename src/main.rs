@@ -191,7 +191,7 @@ fn split_timespan_max_days(timespan: &TimeSpan, max_days: i64) -> Vec<TimeSpan> 
 
     let mut timespans: Vec<TimeSpan> = vec![];
 
-    let mut current_start = timespan.start.clone();
+    let mut current_start = timespan.start;
     let mut current_end = timespan.start + Duration::days(max_days - 1);
 
     while current_end < timespan.end {
@@ -212,7 +212,7 @@ fn split_timespan_max_days(timespan: &TimeSpan, max_days: i64) -> Vec<TimeSpan> 
     timespans
 }
 
-fn split_all_timespans_max_days(timespans: &Vec<TimeSpan>, max_days: i64) -> Vec<TimeSpan> {
+fn split_all_timespans_max_days(timespans: &[TimeSpan], max_days: i64) -> Vec<TimeSpan> {
     let mut results: Vec<TimeSpan> = vec![];
 
     for timespan in timespans {
@@ -224,7 +224,7 @@ fn split_all_timespans_max_days(timespans: &Vec<TimeSpan>, max_days: i64) -> Vec
 }
 
 fn run_request_loop<T>(
-    timespans: &Vec<TimeSpan>,
+    timespans: &[TimeSpan],
     func: &mut dyn FnMut(&TimeSpan) -> Result<Vec<T>, reqwest::Error>,
 ) -> vec::Vec<T> {
     let mut results: Vec<T> = vec![];
