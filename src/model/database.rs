@@ -1,11 +1,13 @@
+use bson::serde_helpers::chrono_datetime_as_bson_datetime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use mongodb::bson::DateTime;
 
 /* Collection: snapshots */
 
 #[derive(Serialize, Deserialize)]
 pub struct Snapshot {
-    pub time: DateTime,
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub time: DateTime<Utc>,
     pub total_asset_of_btc: f32,
     pub balances: Vec<Balance>,
 }
@@ -20,7 +22,8 @@ pub struct Balance {
 
 #[derive(Serialize, Deserialize)]
 pub struct CurrencyHistory {
-    pub time: DateTime,
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub time: DateTime<Utc>,
     pub asset: String,
     pub price: f32,
 }
@@ -29,7 +32,8 @@ pub struct CurrencyHistory {
 
 #[derive(Serialize, Deserialize)]
 pub struct ComputedSnapshot {
-    pub time: DateTime,
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub time: DateTime<Utc>,
     pub total_asset_of_btc: ComputedBalance,
     pub balances: Vec<ComputedBalance>,
 }

@@ -1,4 +1,3 @@
-use bson::Bson;
 use chrono::{DateTime, Utc};
 use mongodb::bson;
 use mongodb::bson::doc;
@@ -8,8 +7,8 @@ pub fn make_aggregate_query(start: DateTime<Utc>, end: DateTime<Utc>) -> Vec<bso
         doc! {
           "$match": {
             "time": {
-              "$gte": Bson::DateTime(start),
-              "$lte": Bson::DateTime(end)
+              "$gte": start,
+              "$lte": end
             }
           }
         },

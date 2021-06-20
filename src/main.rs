@@ -11,8 +11,10 @@ extern crate serde;
 extern crate serde_json;
 extern crate sha2;
 
+use crate::rocket::futures::StreamExt;
 use dotenv::dotenv;
 use rocket::fs::NamedFile;
+use std::iter::Iterator;
 
 mod model;
 use model::binance;
@@ -25,7 +27,7 @@ use aggregate::make_aggregate_query;
 use bson::Bson;
 use mongodb::bson::doc;
 use mongodb::options::FindOptions;
-use mongodb::{bson, sync::Database};
+use mongodb::{bson, Collection, Database};
 
 use env::VarError;
 use std::path::{Path, PathBuf};
@@ -300,9 +302,7 @@ fn get_api_snapshots(
         .snapshots
         .iter()
         .map(|snapshot| database::Snapshot {
-            time: bson::DateTime(
-                chrono::Utc.timestamp_millis(snapshot.update_time) + Duration::seconds(1),
-            ),
+            time: chrono::Utc.timestamp_millis(snapshot.update_time) + Duration::seconds(1),
             balances: snapshot
                 .data
                 .balances
@@ -360,11 +360,9 @@ fn get_api_history(
                 .enumerate()
                 .map(|(i, timestamp)| database::CurrencyHistory {
                     asset: history.currency.to_owned(),
-                    time: bson::DateTime(
-                        DateTime::parse_from_rfc3339(timestamp)
-                            .unwrap()
-                            .with_timezone(&Utc),
-                    ),
+                    time: DateTime::parse_from_rfc3339(timestamp)
+                        .unwrap()
+                        .with_timezone(&Utc),
                     price: history.prices[i].parse::<f32>().unwrap(),
                 })
                 .collect::<Vec<database::CurrencyHistory>>()
@@ -377,51 +375,53 @@ fn get_api_history(
     Ok(history)
 }
 
-fn get_database_snapshots(
+async fn get_database_snapshots(
     database: &Database,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Vec<database::Snapshot> {
-    let collection = database.collection("snapshots");
+    let collection: Collection = database.collection("snapshots");
 
     // Sort with older first.
     let find_options = FindOptions::builder().sort(doc! {"time": 1}).build();
 
-    let results: Vec<database::Snapshot> = collection
+    collection
         .find(
             doc! {
                 "time": {
-                    "$gte": Bson::DateTime(start),
-                    "$lte": Bson::DateTime(end),
+                    "$gte": start,
+                    "$lte": end,
                 }
             },
             find_options,
         )
+        .await
         .unwrap()
+        .collect::<Vec<_>>()
+        .await
         .into_iter()
         .flatten()
         .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
-        .collect();
-
-    results
+        .collect()
 }
 
-fn push_database_snapshots(database: &Database, snapshots: Vec<database::Snapshot>) {
-    let collection = database.collection("snapshots");
+async fn push_database_snapshots(database: &Database, snapshots: Vec<database::Snapshot>) {
+    let collection: Collection = database.collection("snapshots");
 
     let docs: Vec<bson::Document> = snapshots
         .iter()
         .map(|history| bson::ser::to_document(history).unwrap())
         .collect();
 
-    collection.insert_many(docs, None).unwrap();
+    collection.insert_many(docs, None).await;
 }
 
-fn get_possessed_assets(database: &Database) -> Vec<String> {
-    let collection = database.collection("snapshots");
+async fn get_possessed_assets(database: &Database) -> Vec<String> {
+    let collection: Collection = database.collection("snapshots");
 
     let mut assets: Vec<String> = collection
         .distinct("balances.asset", None, None)
+        .await
         .unwrap()
         .iter()
         .map(|document| bson::from_bson(document.to_owned()).unwrap())
@@ -437,27 +437,30 @@ fn get_possessed_assets(database: &Database) -> Vec<String> {
     assets
 }
 
-fn push_database_history(database: &Database, price_history: Vec<database::CurrencyHistory>) {
-    let collection = database.collection("history");
+async fn push_database_history(database: &Database, price_history: Vec<database::CurrencyHistory>) {
+    let collection: Collection = database.collection("history");
 
     let docs: Vec<bson::Document> = price_history
         .iter()
         .map(|history| bson::ser::to_document(history).unwrap())
         .collect();
 
-    collection.insert_many(docs, None).unwrap();
+    collection.insert_many(docs, None).await;
 }
 
-fn get_computed_snapshots(
+async fn get_computed_snapshots(
     database: &Database,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Vec<database::ComputedSnapshot> {
-    let collection = database.collection("snapshots");
+    let collection: Collection = database.collection("snapshots");
 
     let computed_snapshots: Vec<database::ComputedSnapshot> = collection
         .aggregate(make_aggregate_query(start, end), None)
+        .await
         .unwrap()
+        .collect::<Vec<_>>()
+        .await
         .into_iter()
         .flatten()
         .map(|document| bson::from_bson(Bson::Document(document)).unwrap())
@@ -467,7 +470,7 @@ fn get_computed_snapshots(
 }
 
 #[post("/api", format = "json", data = "<body>")]
-fn api(body: Json<RequestBody>) -> content::Json<String> {
+async fn api(body: Json<RequestBody>) -> content::Json<String> {
     println!("Start: {}\nEnd: {}", body.start, body.end);
     let start = DateTime::parse_from_rfc3339(&body.start)
         .unwrap()
@@ -490,14 +493,14 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         env_variables.mongodb_port,
     );
 
-    let client = mongodb::sync::Client::with_uri_str(&mongodb_url).unwrap();
+    let client = mongodb::Client::with_uri_str(&mongodb_url).await.unwrap();
     let database = client.database("crypto-balance");
 
-    let available_snapshots = get_database_snapshots(&database, start, end);
+    let available_snapshots = get_database_snapshots(&database, start, end).await;
     let needed_timespans = get_timespans_to_retrieve(available_snapshots, start, end);
 
     if needed_timespans.is_empty() {
-        let computed_snapshots = get_computed_snapshots(&database, start, end);
+        let computed_snapshots = get_computed_snapshots(&database, start, end).await;
         let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
         return content::Json(result);
     }
@@ -514,9 +517,9 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         )
     });
 
-    push_database_snapshots(&database, snapshots);
+    push_database_snapshots(&database, snapshots).await;
 
-    let assets = get_possessed_assets(&database);
+    let assets = get_possessed_assets(&database).await;
     let split_by_45_days = split_all_timespans_max_days(&needed_timespans, 45);
 
     let price_history = run_request_loop(&split_by_45_days, &mut |timespan: &TimeSpan| {
@@ -529,9 +532,9 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
         )
     });
 
-    push_database_history(&database, price_history);
+    push_database_history(&database, price_history).await;
 
-    let computed_snapshots = get_computed_snapshots(&database, start, end);
+    let computed_snapshots = get_computed_snapshots(&database, start, end).await;
     let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
     content::Json(result)
 }

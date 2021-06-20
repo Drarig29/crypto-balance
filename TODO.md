@@ -6,3 +6,4 @@
 - [ ] Add authentication
 - [ ] Handle errors client-side
 - [ ] Send errors server-side (mongodb connection, rate limit, etc.)
+- [ ] Support all account types (spot, margin, futures)
