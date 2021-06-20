@@ -2,16 +2,16 @@
 name = "crypto-balance"
 version = "0.1.0"
 authors = ["Corentin Girard <corentingirard.dev@gmail.com>"]
+edition = "2018"
 
 [dependencies]
-rocket = "0.4.7"
-rocket_contrib = { version = "0.4.7", features = ["json"], default-features = false }
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
 reqwest = { version = "0.11.3", features = ["blocking", "json"] }
-hmac = "0.10.1"
-sha2 = "0.9.3"
+hmac = "0.11.0"
+sha2 = "0.9.5"
 hex = "0.4.3"
-serde = { version = "1.0.125", features = ["derive"] }
+serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
-mongodb = { version = "1.2.1", features = ["sync"], default-features = false }
+mongodb = { version = "1.2.2", features = ["sync"], default-features = false }
 chrono = "0.4.19"
 dotenv = "0.15.0"

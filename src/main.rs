@@ -7,12 +7,12 @@ extern crate hex;
 extern crate hmac;
 extern crate mongodb;
 extern crate reqwest;
-extern crate rocket_contrib;
 extern crate serde;
 extern crate serde_json;
 extern crate sha2;
 
 use dotenv::dotenv;
+use rocket::fs::NamedFile;
 
 mod model;
 use model::binance;
@@ -28,13 +28,12 @@ use mongodb::options::FindOptions;
 use mongodb::{bson, sync::Database};
 
 use env::VarError;
-use std::io;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use std::{env, vec};
 
-use rocket::response::{content, NamedFile};
-use rocket_contrib::json::Json;
+use rocket::response::content;
+use rocket::serde::json::Json;
 
 use serde::{Deserialize, Serialize};
 
@@ -72,14 +71,11 @@ struct TimeSpan {
 
 const BINANCE_API_BASE_URL: &str = "https://api.binance.com/sapi/v1/accountSnapshot";
 const NOMICS_API_BASE_URL: &str = "https://api.nomics.com/v1/currencies/sparkline";
-
-const ACCOUNT_TYPE_SPOT: &str = "SPOT";
-const ACCOUNT_TYPE_MARGIN: &str = "MARGIN";
-const ACCOUNT_TYPE_FUTURES: &str = "FUTURES";
+const ACCOUNT_TYPE: &str = "SPOT"; // Can be MARGIN or FUTURES too
 
 #[get("/")]
-fn index() -> io::Result<NamedFile> {
-    NamedFile::open("static/index.html")
+async fn index() -> Option<NamedFile> {
+    NamedFile::open("static/index.html").await.ok()
 }
 
 fn get_env_vars() -> Result<Environment, VarError> {
@@ -278,7 +274,7 @@ fn get_api_snapshots(
         shifted_end.timestamp_millis(),
     );
 
-    let mut mac = HmacSha256::new_varkey(auth.binance_secret.as_bytes()).unwrap();
+    let mut mac = HmacSha256::new_from_slice(auth.binance_secret.as_bytes()).unwrap();
     mac.update(params.as_bytes());
 
     let hash_message = mac.finalize().into_bytes();
@@ -470,7 +466,7 @@ fn get_computed_snapshots(
     computed_snapshots
 }
 
-#[post("/api", format = "application/json", data = "<body>")]
+#[post("/api", format = "json", data = "<body>")]
 fn api(body: Json<RequestBody>) -> content::Json<String> {
     println!("Start: {}\nEnd: {}", body.start, body.end);
     let start = DateTime::parse_from_rfc3339(&body.start)
@@ -509,7 +505,13 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
     let split_by_30_days = split_all_timespans_max_days(&needed_timespans, 30);
 
     let snapshots = run_request_loop(&split_by_30_days, &mut |timespan: &TimeSpan| {
-        get_api_snapshots(&env_variables, "SPOT", 30, timespan.start, timespan.end)
+        get_api_snapshots(
+            &env_variables,
+            ACCOUNT_TYPE,
+            30,
+            timespan.start,
+            timespan.end,
+        )
     });
 
     push_database_snapshots(&database, snapshots);
@@ -535,14 +537,16 @@ fn api(body: Json<RequestBody>) -> content::Json<String> {
 }
 
 #[get("/<file..>")]
-fn files(file: PathBuf) -> Option<NamedFile> {
-    NamedFile::open(Path::new("static/").join(file)).ok()
+async fn files(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("static/").join(file)).await.ok()
 }
 
-fn main() {
+#[rocket::main]
+async fn main() {
     dotenv().ok();
 
-    rocket::ignite()
+    rocket::build()
         .mount("/", routes![index, api, files])
-        .launch();
+        .launch()
+        .await;
 }
