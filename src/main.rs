@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![feature(proc_macro_hygiene, decl_macro, async_closure)]
 #[macro_use]
 extern crate rocket;
 extern crate chrono;
@@ -39,7 +39,7 @@ use rocket::serde::json::Json;
 
 use serde::{Deserialize, Serialize};
 
-use reqwest::blocking::Client;
+use reqwest::Client;
 
 use chrono::{DateTime, Duration, SecondsFormat, TimeZone, Utc};
 
@@ -48,6 +48,7 @@ use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
+#[derive(Clone)]
 struct Environment {
     binance_key: String,
     binance_secret: String,
@@ -221,26 +222,12 @@ fn split_all_timespans_max_days(timespans: &[TimeSpan], max_days: i64) -> Vec<Ti
     results
 }
 
-fn run_request_loop<T>(
-    timespans: &[TimeSpan],
-    func: &mut dyn FnMut(&TimeSpan) -> Result<Vec<T>, reqwest::Error>,
-) -> vec::Vec<T> {
-    let mut results: Vec<T> = vec![];
-
-    for timespan in timespans {
-        let mut intermediate_results = func(timespan).unwrap();
-        results.append(&mut intermediate_results);
-    }
-
-    results
-}
-
 fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
     let formatted = datetime.to_rfc3339_opts(SecondsFormat::Secs, true);
     formatted.replace(":", "%3A")
 }
 
-fn get_api_snapshots(
+async fn get_api_snapshots(
     auth: &Environment,
     account_type: &str,
     limit: u8,
@@ -289,9 +276,10 @@ fn get_api_snapshots(
     let res = client
         .get(url)
         .header("X-MBX-APIKEY", auth.binance_key.to_owned())
-        .send()?;
+        .send()
+        .await?;
 
-    let json = match res.text() {
+    let json = match res.text().await {
         Ok(res) => res,
         Err(e) => return Err(e),
     };
@@ -322,7 +310,7 @@ fn get_api_snapshots(
     Ok(snapshots)
 }
 
-fn get_api_history(
+async fn get_api_history(
     auth: &Environment,
     ids: Vec<String>,
     convert: String,
@@ -342,9 +330,9 @@ fn get_api_history(
     );
 
     let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
-    let res = client.get(url).send()?;
+    let res = client.get(url).send().await?;
 
-    let json = match res.text() {
+    let json = match res.text().await {
         Ok(res) => res,
         Err(e) => return Err(e),
     };
@@ -507,32 +495,34 @@ async fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     let split_by_30_days = split_all_timespans_max_days(&needed_timespans, 30);
 
-    let snapshots = run_request_loop(&split_by_30_days, &mut |timespan: &TimeSpan| {
-        get_api_snapshots(
-            &env_variables,
-            ACCOUNT_TYPE,
-            30,
-            timespan.start,
-            timespan.end,
-        )
-    });
+    let snapshots = get_api_snapshots(
+        &env_variables,
+        ACCOUNT_TYPE,
+        30,
+        split_by_30_days[0].start,
+        split_by_30_days[0].end,
+    )
+    .await;
 
-    push_database_snapshots(&database, snapshots).await;
+    if let Ok(snapshots) = snapshots {
+        push_database_snapshots(&database, snapshots).await;
+    }
 
     let assets = get_possessed_assets(&database).await;
     let split_by_45_days = split_all_timespans_max_days(&needed_timespans, 45);
 
-    let price_history = run_request_loop(&split_by_45_days, &mut |timespan: &TimeSpan| {
-        get_api_history(
-            &env_variables,
-            assets.to_owned(),
-            body.conversion.to_owned(),
-            timespan.start,
-            timespan.end,
-        )
-    });
+    let price_history = get_api_history(
+        &env_variables,
+        assets.to_owned(),
+        body.conversion.to_owned(),
+        split_by_45_days[0].start,
+        split_by_45_days[0].end,
+    )
+    .await;
 
-    push_database_history(&database, price_history).await;
+    if let Ok(price_history) = price_history {
+        push_database_history(&database, price_history).await;
+    }
 
     let computed_snapshots = get_computed_snapshots(&database, start, end).await;
     let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
