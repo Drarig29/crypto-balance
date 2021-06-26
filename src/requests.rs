@@ -1,0 +1,148 @@
+use crate::model::{binance, database, nomics};
+use crate::utils;
+use crate::Environment;
+use crate::{BINANCE_API_BASE_URL, NOMICS_API_BASE_URL};
+
+use chrono::{DateTime, Duration, TimeZone, Utc};
+use hmac::{Hmac, Mac, NewMac};
+use reqwest::Client;
+use sha2::Sha256;
+use std::time::SystemTime;
+
+type HmacSha256 = Hmac<Sha256>;
+
+pub async fn get_snapshots(
+    auth: &Environment,
+    account_type: &str,
+    limit: u8,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Result<Vec<database::Snapshot>, reqwest::Error> {
+    let client = Client::new();
+
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+
+    let shifted_start = if start == end {
+        start - Duration::days(1)
+    } else {
+        start - Duration::seconds(1)
+    };
+
+    let shifted_end = end - Duration::seconds(1);
+
+    println!(
+        "Call Binance API (start: {}, end: {})",
+        shifted_start, shifted_end
+    );
+
+    let params = format!(
+        "type={}&limit={}&timestamp={}&startTime={}&endTime={}",
+        account_type,
+        limit,
+        now,
+        shifted_start.timestamp_millis(),
+        shifted_end.timestamp_millis(),
+    );
+
+    let mut mac = HmacSha256::new_from_slice(auth.binance_secret.as_bytes()).unwrap();
+    mac.update(params.as_bytes());
+
+    let hash_message = mac.finalize().into_bytes();
+    let signature = hex::encode(&hash_message);
+
+    let url = format!(
+        "{}?{}&signature={}",
+        BINANCE_API_BASE_URL, params, signature
+    );
+    let res = client
+        .get(url)
+        .header("X-MBX-APIKEY", auth.binance_key.to_owned())
+        .send()
+        .await?;
+
+    let json = match res.text().await {
+        Ok(res) => res,
+        Err(e) => return Err(e),
+    };
+
+    let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
+
+    let snapshots: Vec<database::Snapshot> = obj
+        .snapshots
+        .iter()
+        .map(|snapshot| database::Snapshot {
+            time: chrono::Utc.timestamp_millis(snapshot.update_time) + Duration::seconds(1),
+            balances: snapshot
+                .data
+                .balances
+                .iter()
+                .filter(|balance| balance.free.parse::<f32>().unwrap() > 0.)
+                .map(|balance| database::Balance {
+                    asset: balance.asset.to_owned(),
+                    amount: balance.free.parse::<f32>().unwrap(),
+                })
+                .collect(),
+            total_asset_of_btc: snapshot.data.total_asset_of_btc.parse::<f32>().unwrap(),
+        })
+        .collect();
+
+    println!("Got {} snapshots.", snapshots.len());
+
+    Ok(snapshots)
+}
+
+pub async fn get_history(
+    auth: &Environment,
+    ids: Vec<String>,
+    convert: String,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
+    let client = Client::new();
+
+    println!("Call Nomics API (start: {}, end: {})", start, end);
+
+    let params = format!(
+        "ids={}&convert={}&start={}&end={}",
+        ids.join(","),
+        convert,
+        utils::get_uri_escaped_datetime(start),
+        utils::get_uri_escaped_datetime(end),
+    );
+
+    let url = format!("{}?key={}&{}", NOMICS_API_BASE_URL, auth.nomics_key, params);
+    let res = client.get(url).send().await?;
+
+    let json = match res.text().await {
+        Ok(res) => res,
+        Err(e) => return Err(e),
+    };
+
+    let obj: Vec<nomics::Sparkline> = serde_json::from_str(&json).unwrap();
+
+    let history: Vec<database::CurrencyHistory> = obj
+        .iter()
+        .map(|history| {
+            history
+                .timestamps
+                .iter()
+                .enumerate()
+                .map(|(i, timestamp)| database::CurrencyHistory {
+                    asset: history.currency.to_owned(),
+                    time: DateTime::parse_from_rfc3339(timestamp)
+                        .unwrap()
+                        .with_timezone(&Utc),
+                    price: history.prices[i].parse::<f32>().unwrap(),
+                })
+                .collect::<Vec<database::CurrencyHistory>>()
+        })
+        .flatten()
+        .collect();
+
+    println!("Got {} currencies history.", history.len());
+
+    Ok(history)
+}
