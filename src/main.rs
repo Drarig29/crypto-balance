@@ -122,14 +122,8 @@ async fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     let split_by_30_days = utils::split_all_timespans_max_days(&needed_timespans, 30);
 
-    let snapshots = requests::get_snapshots(
-        &env_variables,
-        ACCOUNT_TYPE,
-        30,
-        split_by_30_days[0].start,
-        split_by_30_days[0].end,
-    )
-    .await;
+    let snapshots =
+        requests::get_all_snapshots(&env_variables, ACCOUNT_TYPE, 30, &split_by_30_days).await;
 
     if let Ok(snapshots) = snapshots {
         database::push_snapshots(&database, snapshots).await;
@@ -138,14 +132,9 @@ async fn api(body: Json<RequestBody>) -> content::Json<String> {
     let assets = database::get_possessed_assets(&database).await;
     let split_by_45_days = utils::split_all_timespans_max_days(&needed_timespans, 45);
 
-    let price_history = requests::get_history(
-        &env_variables,
-        assets.to_owned(),
-        body.conversion.to_owned(),
-        split_by_45_days[0].start,
-        split_by_45_days[0].end,
-    )
-    .await;
+    let price_history =
+        requests::get_all_history(&env_variables, &assets, &body.conversion, &split_by_45_days)
+            .await;
 
     if let Ok(price_history) = price_history {
         database::push_history(&database, price_history).await;

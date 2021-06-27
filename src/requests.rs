@@ -1,6 +1,7 @@
 use crate::model::{binance, database, nomics};
 use crate::utils;
 use crate::Environment;
+use crate::TimeSpan;
 use crate::{BINANCE_API_BASE_URL, NOMICS_API_BASE_URL};
 
 use chrono::{DateTime, Duration, TimeZone, Utc};
@@ -11,7 +12,53 @@ use std::time::SystemTime;
 
 type HmacSha256 = Hmac<Sha256>;
 
-pub async fn get_snapshots(
+pub async fn get_all_snapshots(
+    auth: &Environment,
+    account_type: &str,
+    limit: u8,
+    timespans: &[TimeSpan],
+) -> Result<Vec<database::Snapshot>, reqwest::Error> {
+    let mut snapshots = Vec::new();
+
+    for timespan in timespans {
+        let intermediate_results =
+            get_snapshots(auth, account_type, limit, timespan.start, timespan.end).await;
+
+        let mut intermediate_results = match intermediate_results {
+            Ok(intermediate_results) => intermediate_results,
+            Err(e) => return Err(e),
+        };
+
+        snapshots.append(&mut intermediate_results);
+    }
+
+    Ok(snapshots)
+}
+
+pub async fn get_all_history(
+    auth: &Environment,
+    ids: &[String],
+    convert: &str,
+    timespans: &[TimeSpan],
+) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
+    let mut snapshots = Vec::new();
+
+    for timespan in timespans {
+        let intermediate_results =
+            get_history(auth, ids, convert, timespan.start, timespan.end).await;
+
+        let mut intermediate_results = match intermediate_results {
+            Ok(intermediate_results) => intermediate_results,
+            Err(e) => return Err(e),
+        };
+
+        snapshots.append(&mut intermediate_results);
+    }
+
+    Ok(snapshots)
+}
+
+async fn get_snapshots(
     auth: &Environment,
     account_type: &str,
     limit: u8,
@@ -94,10 +141,10 @@ pub async fn get_snapshots(
     Ok(snapshots)
 }
 
-pub async fn get_history(
+async fn get_history(
     auth: &Environment,
-    ids: Vec<String>,
-    convert: String,
+    ids: &[String],
+    convert: &str,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
