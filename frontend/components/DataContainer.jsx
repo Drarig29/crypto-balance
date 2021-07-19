@@ -60,15 +60,25 @@ export const DataContainer = () => {
         setLoading(true);
         setSelectedIndex(null);
 
-        fetch("/api", options)
-            .then(response => response.json())
+        const getSnapshots = async () => {
+            const response = await fetch('/api', options);
+            const obj = await response.json();
+
+            if (response.status !== 200) {
+                throw obj;
+            }
+
+            return transformData(obj);
+        }
+
+        getSnapshots()
             .then(snapshots => {
                 setLoading(false);
-                setSnapshots(transformData(snapshots));
+                setSnapshots(snapshots);
             })
-            .catch(error => {
+            .catch(e => {
                 setLoading(false);
-                alert(error);
+                alert(e);
             });
     }, [dateRange]);
 

@@ -20,9 +20,14 @@ use chrono::{DateTime, Utc};
 use dotenv::dotenv;
 use env::VarError;
 use rocket::fs::NamedFile;
-use rocket::response::content;
+use rocket::http::{ContentType, Status};
+use rocket::request::Request;
+use rocket::response;
+use rocket::response::Responder;
 use rocket::serde::json::Json;
+use rocket::Response;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::{env, vec};
 
@@ -42,6 +47,12 @@ pub struct RequestBody {
     conversion: String,
     start: String,
     end: String,
+}
+
+#[derive(Debug)]
+struct ApiResponse {
+    status: Status,
+    json: Value,
 }
 
 #[derive(Debug)]
@@ -84,8 +95,17 @@ async fn files(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(Path::new("static/").join(file)).await.ok()
 }
 
+impl<'r> Responder<'r, 'r> for ApiResponse {
+    fn respond_to(self, req: &Request) -> response::Result<'r> {
+        Response::build_from(self.json.respond_to(req).unwrap())
+            .status(self.status)
+            .header(ContentType::JSON)
+            .ok()
+    }
+}
+
 #[post("/api", format = "json", data = "<body>")]
-async fn api(body: Json<RequestBody>) -> content::Json<String> {
+async fn api(body: Json<RequestBody>) -> ApiResponse {
     println!("Start: {}\nEnd: {}", body.start, body.end);
     let start = DateTime::parse_from_rfc3339(&body.start)
         .unwrap()
@@ -97,7 +117,12 @@ async fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     let env_variables = match get_env_vars() {
         Ok(res) => res,
-        Err(err) => return content::Json(err.to_string()),
+        Err(e) => {
+            return ApiResponse {
+                status: Status::InternalServerError,
+                json: json!(e.to_string()),
+            }
+        }
     };
 
     let mongodb_url = format!(
@@ -116,33 +141,62 @@ async fn api(body: Json<RequestBody>) -> content::Json<String> {
 
     if needed_timespans.is_empty() {
         let computed_snapshots = database::get_computed_snapshots(&database, start, end).await;
-        let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
-        return content::Json(result);
+        let result = serde_json::to_value(&computed_snapshots).unwrap();
+        return ApiResponse {
+            status: Status::Ok,
+            json: result,
+        };
     }
 
     let split_by_30_days = utils::split_all_timespans_max_days(&needed_timespans, 30);
 
-    let snapshots =
-        requests::get_all_snapshots(&env_variables, ACCOUNT_TYPE, 30, &split_by_30_days).await;
+    let snapshots = match requests::get_all_snapshots(
+        &env_variables,
+        ACCOUNT_TYPE,
+        30,
+        &split_by_30_days,
+    )
+    .await
+    {
+        Ok(snapshots) => snapshots,
+        Err(e) => {
+            return ApiResponse {
+                status: Status::InternalServerError,
+                json: json!(e.to_string()),
+            }
+        }
+    };
 
-    if let Ok(snapshots) = snapshots {
-        database::push_snapshots(&database, snapshots).await;
-    }
+    database::push_snapshots(&database, snapshots).await;
 
     let assets = database::get_possessed_assets(&database).await;
     let split_by_45_days = utils::split_all_timespans_max_days(&needed_timespans, 45);
 
-    let price_history =
-        requests::get_all_history(&env_variables, &assets, &body.conversion, &split_by_45_days)
-            .await;
+    let price_history = match requests::get_all_history(
+        &env_variables,
+        &assets,
+        &body.conversion,
+        &split_by_45_days,
+    )
+    .await
+    {
+        Ok(price_history) => price_history,
+        Err(e) => {
+            return ApiResponse {
+                status: Status::InternalServerError,
+                json: json!(e.to_string()),
+            }
+        }
+    };
 
-    if let Ok(price_history) = price_history {
-        database::push_history(&database, price_history).await;
-    }
+    database::push_history(&database, price_history).await;
 
     let computed_snapshots = database::get_computed_snapshots(&database, start, end).await;
-    let result = serde_json::to_string_pretty(&computed_snapshots).unwrap();
-    content::Json(result)
+    let result = serde_json::to_value(&computed_snapshots).unwrap();
+    ApiResponse {
+        status: Status::Ok,
+        json: result,
+    }
 }
 
 #[rocket::main]

@@ -3,6 +3,7 @@ use crate::utils;
 use crate::Environment;
 use crate::TimeSpan;
 use crate::{BINANCE_API_BASE_URL, NOMICS_API_BASE_URL};
+use std::error::Error;
 
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use hmac::{Hmac, Mac, NewMac};
@@ -17,7 +18,7 @@ pub async fn get_all_snapshots(
     account_type: &str,
     limit: u8,
     timespans: &[TimeSpan],
-) -> Result<Vec<database::Snapshot>, reqwest::Error> {
+) -> Result<Vec<database::Snapshot>, Box<dyn Error>> {
     let mut snapshots = Vec::new();
 
     for timespan in timespans {
@@ -40,17 +41,15 @@ pub async fn get_all_history(
     ids: &[String],
     convert: &str,
     timespans: &[TimeSpan],
-) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
+) -> Result<Vec<database::CurrencyHistory>, Box<dyn Error>> {
     let mut snapshots = Vec::new();
 
     for timespan in timespans {
-        let intermediate_results =
-            get_history(auth, ids, convert, timespan.start, timespan.end).await;
-
-        let mut intermediate_results = match intermediate_results {
-            Ok(intermediate_results) => intermediate_results,
-            Err(e) => return Err(e),
-        };
+        let mut intermediate_results =
+            match get_history(auth, ids, convert, timespan.start, timespan.end).await {
+                Ok(intermediate_results) => intermediate_results,
+                Err(e) => return Err(e),
+            };
 
         snapshots.append(&mut intermediate_results);
     }
@@ -64,7 +63,7 @@ async fn get_snapshots(
     limit: u8,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
-) -> Result<Vec<database::Snapshot>, reqwest::Error> {
+) -> Result<Vec<database::Snapshot>, Box<dyn Error>> {
     let client = Client::new();
 
     let now = SystemTime::now()
@@ -112,10 +111,13 @@ async fn get_snapshots(
 
     let json = match res.text().await {
         Ok(res) => res,
-        Err(e) => return Err(e),
+        Err(e) => return Err(Box::new(e)),
     };
 
-    let obj: binance::RootObject = serde_json::from_str(&json).unwrap();
+    let obj = match serde_json::from_str::<binance::RootObject>(&json) {
+        Ok(obj) => obj,
+        Err(e) => return Err(Box::new(e)),
+    };
 
     let snapshots: Vec<database::Snapshot> = obj
         .snapshots
@@ -147,7 +149,7 @@ async fn get_history(
     convert: &str,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
-) -> Result<Vec<database::CurrencyHistory>, reqwest::Error> {
+) -> Result<Vec<database::CurrencyHistory>, Box<dyn Error>> {
     let client = Client::new();
 
     println!("Call Nomics API (start: {}, end: {})", start, end);
@@ -165,10 +167,13 @@ async fn get_history(
 
     let json = match res.text().await {
         Ok(res) => res,
-        Err(e) => return Err(e),
+        Err(e) => return Err(Box::new(e)),
     };
 
-    let obj: Vec<nomics::Sparkline> = serde_json::from_str(&json).unwrap();
+    let obj = match serde_json::from_str::<Vec<nomics::Sparkline>>(&json) {
+        Ok(obj) => obj,
+        Err(e) => return Err(Box::new(e)),
+    };
 
     let history: Vec<database::CurrencyHistory> = obj
         .iter()
