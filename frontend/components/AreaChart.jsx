@@ -12,8 +12,11 @@ export const AreaChart = ({ data, onDateClicked }) => {
     const [context] = useContext(Context);
 
     const assets = useMemo(() => (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
+    const allAssets = [...assets, 'Total as BTC']
 
-    const [thickness, setThickness] = useState(Object.fromEntries([...assets, 'Total as BTC'].map(asset => [asset, 1])));
+    const values = useMemo(() => data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.value }), d)), [assets]);
+
+    const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, 1])));
     const [stacked, setStacked] = useState(true);
 
     const rainbow = new Rainbow();
@@ -39,7 +42,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
             <ResponsiveContainer width="90%" height={500}>
-                <Chart data={data} onClick={handleDateClicked}>
+                <Chart data={values} onClick={handleDateClicked}>
                     <XAxis dataKey="time" />
                     <YAxis tickFormatter={value => toCurrency(value, context, 0)} />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />

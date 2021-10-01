@@ -16,9 +16,9 @@ function Spinner({ visible }) {
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
         time: toDateString(snapshot.time),
-        "Total as BTC": snapshot.total_asset_of_btc.value,
+        "Total as BTC": snapshot.total_asset_of_btc,
     }, ...snapshot.balances.map(balance => ({
-        [balance.asset]: balance.value
+        [balance.asset]: balance
     }))));
 
     console.debug({ snapshots, transformed });
@@ -100,7 +100,7 @@ export const DataContainer = () => {
                 </div>
                 <aside>
                     <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
-                    Total (BTC) : {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'], context)}
+                    Total (BTC) : {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'].value, context)}
                 </aside>
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />

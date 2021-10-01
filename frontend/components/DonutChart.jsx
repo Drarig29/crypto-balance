@@ -6,9 +6,9 @@ import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recha
 import { CustomTooltip } from './CustomTooltip';
 
 export const DonutChart = ({ label, data }) => {
-    const total = data && data["Total as BTC"];
+    const total = data && data["Total as BTC"].value;
     const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
-    const values = useMemo(() => assets.map(asset => ({ name: asset, value: data[asset], percent: data[asset] / total })), [assets]);
+    const values = useMemo(() => assets.map(asset => ({ name: asset, value: data[asset].value, percent: data[asset].value / total })), [assets]);
 
     const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
 
@@ -37,7 +37,7 @@ export const DonutChart = ({ label, data }) => {
     return (
         <ResponsiveContainer width="90%" height={300} margin={{ left: 50, right: 50 }}>
             <PieChart>
-                <Pie animationDuration={1000} onAnimationEnd={() => setShowLabel(true)} data={values}
+                <Pie animationDuration={1000} data={values}
                     nameKey="name" dataKey="value" cx="50%" cy="50%"
                     innerRadius={75} paddingAngle={5}
                     activeShape={renderActiveShape} activeIndex={0}>
