@@ -19,13 +19,13 @@ export const AreaChart = ({ data, onDateClicked }) => {
     const rainbow = new Rainbow();
     rainbow.setNumberRange(0, assets.length + 1);
 
-    const handleMouseEnter = (o) => {
-        const { dataKey } = o;
+    const handleMouseEnter = (props) => {
+        const { dataKey } = props;
         setThickness({ ...thickness, [dataKey]: 3 });
     };
 
-    const handleMouseLeave = (o) => {
-        const { dataKey } = o;
+    const handleMouseLeave = (props) => {
+        const { dataKey } = props;
         setThickness({ ...thickness, [dataKey]: 1 });
     };
 

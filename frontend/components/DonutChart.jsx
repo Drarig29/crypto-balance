@@ -10,26 +10,37 @@ export const DonutChart = ({ label, data }) => {
     const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
     const values = useMemo(() => assets.map(asset => ({ name: asset, value: data[asset], percent: data[asset] / total })), [assets]);
 
-    const [showLabel, setShowLabel] = useState(false);
     const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
 
     const rainbow = new Rainbow();
     rainbow.setNumberRange(0, values.length + 1);
 
-    const handleMouseEnter = (o) => {
-        const { value } = o;
+    const handleMouseEnter = (props) => {
+        const { value } = props;
         setThickness({ ...thickness, [value]: 3 });
     };
 
-    const handleMouseLeave = (o) => {
-        const { value } = o;
+    const handleMouseLeave = (props) => {
+        const { value } = props;
         setThickness({ ...thickness, [value]: 1 });
     };
+
+    const renderActiveShape = (props) => {
+        const { cx, cy } = props;
+        return (
+            <g>
+                <text className="recharts-text" x={cx} y={cy} dy={8} textAnchor="middle">{label}</text>
+            </g>
+        );
+    }
 
     return (
         <ResponsiveContainer width="90%" height={300} margin={{ left: 50, right: 50 }}>
             <PieChart>
-                <Pie animationDuration={1000} onAnimationEnd={() => setShowLabel(true)} data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={75} paddingAngle={5}>
+                <Pie animationDuration={1000} onAnimationEnd={() => setShowLabel(true)} data={values}
+                    nameKey="name" dataKey="value" cx="50%" cy="50%"
+                    innerRadius={75} paddingAngle={5}
+                    activeShape={renderActiveShape} activeIndex={0}>
                     {values.map((value, index) => {
                         const color = `#${rainbow.colorAt(index)}`;
                         return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
@@ -37,14 +48,6 @@ export const DonutChart = ({ label, data }) => {
                 </Pie>
                 <Tooltip content={CustomTooltip} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
-                <text className="recharts-text" x="50%" y="50%" textAnchor="middle" dy={-6} fill="white" style={showLabel ?
-                    {
-                        opacity: 1,
-                        transition: 'opacity 0.5s ease 0s'
-                    } : {
-                        opacity: 0,
-                    }
-                }>{label}</text>
             </PieChart>
         </ResponsiveContainer>
     )
