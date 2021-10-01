@@ -10,7 +10,7 @@ import { toCurrency, toDateString, toISOString } from '../helpers';
 import { Context } from '..';
 
 function Spinner({ visible }) {
-    return <span className="spinner" style={{ visibility: visible ? 'visible' : 'hidden' }}></span>
+    return <span className="spinner" style={{ display: visible ? 'block' : 'none' }}></span>
 }
 
 function transformData(snapshots) {
@@ -94,8 +94,10 @@ export const DataContainer = () => {
     return (
         <>
             <header>
-                <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
-                <Spinner visible={loading} />
+                <div>
+                    <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
+                    <Spinner visible={loading} />
+                </div>
                 <aside>
                     <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
                     Total (BTC) : {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'], context)}

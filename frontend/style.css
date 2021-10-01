@@ -21,7 +21,11 @@ aside {
 header {
   display: flex;
   align-items: center;
-  margin-left: 40px;
+}
+
+header > div {
+  display: flex;
+  align-items: center;
 }
 
 .recharts-text {
