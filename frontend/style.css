@@ -117,3 +117,14 @@ header > div {
 .InputFromTo-to .DayPickerInput-Overlay {
   margin-left: -198px;
 }
+
+@media (max-width: 1160px) {
+  header {
+    flex-direction: column-reverse;
+  }
+
+  aside {
+    position: relative;
+    margin-top: 14px;
+  }
+}
