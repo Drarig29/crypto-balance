@@ -203,8 +203,10 @@ async fn api(body: Json<RequestBody>) -> ApiResponse {
 async fn main() {
     dotenv().ok();
 
-    rocket::build()
+    let res = rocket::build()
         .mount("/", routes![index, api, files])
         .launch()
         .await;
+    
+    res.expect("An error occured while launching the rocket.")
 }
