@@ -19,5 +19,9 @@ export function toPercentage(percent) {
 }
 
 export function toDateString(date) {
+    if (typeof date.$date === 'string') {
+        return new Date(date.$date).toDateString()
+    }
+
     return new Date(parseInt(date.$date.$numberLong)).toDateString()
 }
