@@ -38,7 +38,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
         <>
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
-            <ResponsiveContainer width="60%" height={500}>
+            <ResponsiveContainer width="90%" height={500}>
                 <Chart data={data} onClick={handleDateClicked}>
                     <XAxis dataKey="time" />
                     <YAxis tickFormatter={value => toCurrency(value, context, 0)} />

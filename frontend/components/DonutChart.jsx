@@ -27,7 +27,7 @@ export const DonutChart = ({ label, data }) => {
     };
 
     return (
-        <ResponsiveContainer width="60%" height={300} margin={{ left: 50, right: 50 }}>
+        <ResponsiveContainer width="90%" height={300} margin={{ left: 50, right: 50 }}>
             <PieChart>
                 <Pie animationDuration={1000} onAnimationEnd={() => setShowLabel(true)} data={values} nameKey="name" dataKey="value" cx="50%" cy="50%" innerRadius={75} paddingAngle={5}>
                     {values.map((value, index) => {
