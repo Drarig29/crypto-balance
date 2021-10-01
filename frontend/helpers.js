@@ -17,3 +17,7 @@ export function toCurrency(value, context, digits = 2) {
 export function toPercentage(percent) {
     return `${(percent * 100).toFixed(2)} %`;
 }
+
+export function toDateString(date) {
+    return new Date(parseInt(date.$date.$numberLong)).toDateString()
+}

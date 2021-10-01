@@ -6,7 +6,7 @@ import { DatePicker } from './DatePicker';
 import { DonutChart } from './DonutChart';
 import { VisibilityButton } from './VisibilityButton';
 
-import { toCurrency, toISOString } from '../helpers';
+import { toCurrency, toDateString, toISOString } from '../helpers';
 import { Context } from '..';
 
 function Spinner({ visible }) {
@@ -15,7 +15,7 @@ function Spinner({ visible }) {
 
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
-        time: new Date(snapshot.time.$date).toDateString(),
+        time: toDateString(snapshot.time),
         "Total as BTC": snapshot.total_asset_of_btc.value,
     }, ...snapshot.balances.map(balance => ({
         [balance.asset]: balance.value

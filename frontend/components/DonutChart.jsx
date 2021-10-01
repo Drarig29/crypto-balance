@@ -6,8 +6,8 @@ import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recha
 import { CustomTooltip } from './CustomTooltip';
 
 export const DonutChart = ({ label, data }) => {
-    const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
     const total = data && data["Total as BTC"];
+    const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
     const values = useMemo(() => assets.map(asset => ({ name: asset, value: data[asset], percent: data[asset] / total })), [assets]);
 
     const [showLabel, setShowLabel] = useState(false);
