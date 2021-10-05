@@ -85,7 +85,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
 
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <Tooltip content={CustomTooltip} valueFormatter={valueFormatter} />
-                    <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onMouseUp={handleMouseClick} />
+                    <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onMouseUp={handleMouseClick} onTouchEnd={handleMouseClick} />
 
                     {selectedAsset ? (
                         <Area type="monotone" dataKey={selectedAsset.name} strokeWidth={HIGHLIGHT_THICKNESS} stroke={selectedAsset.color} fill={selectedAsset.color} />
