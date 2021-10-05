@@ -49,7 +49,8 @@ export const AreaChart = ({ data, onDateClicked }) => {
         }
     };
 
-    const handleDateClicked = (payload) => {
+    const handleDateChanged = (payload) => {
+        if (!payload) return;
         const { activeTooltipIndex } = payload;
         onDateClicked(activeTooltipIndex);
     };
@@ -59,7 +60,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
             <ResponsiveContainer width="90%" height={500}>
-                <Chart data={values} onClick={handleDateClicked}>
+                <Chart data={values} onClick={handleDateChanged}>
                     <XAxis dataKey="time" />
                     <YAxis tickFormatter={value => toCurrency(value, context, 0)} />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
