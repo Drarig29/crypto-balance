@@ -15,7 +15,7 @@ Edit the `.env` file at the root of the project with your personal API keys.
 Once done, simply do the following:
 
 ```bash
-docker-compose build
+DOCKER_BUILDKIT=1 docker-compose build
 docker-compose up -d
 ```
 
@@ -26,6 +26,8 @@ You can access:
 - The web app via http://127.0.0.1/
 - The MongoDB web interface via http://127.0.0.1:8081/
 - The database via the port 27017
+
+**Note:** See [this answer](https://stackoverflow.com/a/60590697/3970387) to understand what `DOCKER_BUILDKIT=1` does.
 
 ## Back-end
 
@@ -79,7 +81,3 @@ Go [here](https://p.nomics.com/cryptocurrency-bitcoin-api) to know how to create
 - Built with React
 - Charts are made with [Recharts](https://recharts.org/en-US/)
 - Built with [esbuild](https://esbuild.github.io/)
-
-## TODO
-
-See the [TODO list](TODO.md).
