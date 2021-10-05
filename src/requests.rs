@@ -6,12 +6,8 @@ use crate::{BINANCE_API_BASE_URL, NOMICS_API_BASE_URL};
 use std::error::Error;
 
 use chrono::{DateTime, Duration, TimeZone, Utc};
-use hmac::{Hmac, Mac, NewMac};
 use reqwest::Client;
-use sha2::Sha256;
 use std::time::SystemTime;
-
-type HmacSha256 = Hmac<Sha256>;
 
 pub async fn get_all_snapshots(
     auth: &Environment,
@@ -93,11 +89,7 @@ async fn get_snapshots(
         shifted_end.timestamp_millis(),
     );
 
-    let mut mac = HmacSha256::new_from_slice(auth.binance_secret.as_bytes()).unwrap();
-    mac.update(params.as_bytes());
-
-    let hash_message = mac.finalize().into_bytes();
-    let signature = hex::encode(&hash_message);
+    let signature = utils::get_mac_sha256(&params, &auth.binance_secret);
 
     let url = format!(
         "{}?{}&signature={}",

@@ -3,6 +3,11 @@ use crate::TimeSpan;
 
 use chrono::{DateTime, Duration, SecondsFormat, Utc};
 
+use hmac::{Hmac, Mac, NewMac};
+use sha2::Sha256;
+
+type HmacSha256 = Hmac<Sha256>;
+
 pub fn get_missing_timespans(needed: TimeSpan, available: TimeSpan) -> Vec<TimeSpan> {
     assert!(needed.start <= needed.end);
     assert!(available.start <= available.end);
@@ -126,4 +131,12 @@ pub fn split_all_timespans_max_days(timespans: &[TimeSpan], max_days: i64) -> Ve
 pub fn get_uri_escaped_datetime(datetime: DateTime<Utc>) -> String {
     let formatted = datetime.to_rfc3339_opts(SecondsFormat::Secs, true);
     formatted.replace(":", "%3A")
+}
+
+pub fn get_mac_sha256(data: &String, secret: &String) -> String {
+    let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
+    mac.update(data.as_bytes());
+
+    let hash_message = mac.finalize().into_bytes();
+    hex::encode(&hash_message)
 }

@@ -22,8 +22,7 @@ use env::VarError;
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Status};
 use rocket::request::Request;
-use rocket::response;
-use rocket::response::Responder;
+use rocket::response::{self, Responder};
 use rocket::serde::json::Json;
 use rocket::Response;
 use serde::{Deserialize, Serialize};
@@ -33,6 +32,7 @@ use std::{env, vec};
 
 #[derive(Clone)]
 pub struct Environment {
+    app_password: String,
     binance_key: String,
     binance_secret: String,
     nomics_key: String,
@@ -44,6 +44,7 @@ pub struct Environment {
 
 #[derive(Serialize, Deserialize)]
 pub struct RequestBody {
+    password: String,
     conversion: String,
     start: String,
     end: String,
@@ -66,6 +67,7 @@ pub const NOMICS_API_BASE_URL: &str = "https://api.nomics.com/v1/currencies/spar
 pub const ACCOUNT_TYPE: &str = "SPOT"; // Can be MARGIN or FUTURES too
 
 fn get_env_vars() -> Result<Environment, VarError> {
+    let app_password = env::var("APPLICATION_PASSWORD")?;
     let binance_key = env::var("BINANCE_API_KEY")?;
     let binance_secret = env::var("BINANCE_API_SECRET")?;
     let nomics_key = env::var("NOMICS_API_KEY")?;
@@ -75,6 +77,7 @@ fn get_env_vars() -> Result<Environment, VarError> {
     let mongodb_password = env::var("MONGODB_PASSWORD")?;
 
     Ok(Environment {
+        app_password,
         binance_key,
         binance_secret,
         nomics_key,
@@ -106,15 +109,6 @@ impl<'r> Responder<'r, 'r> for ApiResponse {
 
 #[post("/api", format = "json", data = "<body>")]
 async fn api(body: Json<RequestBody>) -> ApiResponse {
-    println!("Start: {}\nEnd: {}", body.start, body.end);
-    let start = DateTime::parse_from_rfc3339(&body.start)
-        .unwrap()
-        .with_timezone(&Utc);
-
-    let end = DateTime::parse_from_rfc3339(&body.end)
-        .unwrap()
-        .with_timezone(&Utc);
-
     let env_variables = match get_env_vars() {
         Ok(res) => res,
         Err(e) => {
@@ -124,6 +118,22 @@ async fn api(body: Json<RequestBody>) -> ApiResponse {
             }
         }
     };
+
+    if body.password != env_variables.app_password {
+        return ApiResponse {
+            status: Status::Forbidden,
+            json: json!("Incorrect password.".to_string()),
+        };
+    }
+
+    println!("Start: {}\nEnd: {}", body.start, body.end);
+    let start = DateTime::parse_from_rfc3339(&body.start)
+        .unwrap()
+        .with_timezone(&Utc);
+
+    let end = DateTime::parse_from_rfc3339(&body.end)
+        .unwrap()
+        .with_timezone(&Utc);
 
     let mongodb_url = format!(
         "mongodb://{}:{}@{}:{}",
@@ -207,6 +217,6 @@ async fn main() {
         .mount("/", routes![index, api, files])
         .launch()
         .await;
-    
+
     res.expect("An error occured while launching the rocket.")
 }
