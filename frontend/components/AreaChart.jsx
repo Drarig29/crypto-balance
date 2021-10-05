@@ -4,7 +4,7 @@ import Rainbow from 'rainbowvis.js';
 import { YAxis, Tooltip, Area, CartesianGrid, XAxis, AreaChart as Chart, Legend, ResponsiveContainer } from 'recharts';
 
 import { Checkbox } from './CheckBox';
-import { toCurrency } from '../helpers';
+import { toAssetAmount, toCurrency } from '../helpers';
 import { Context } from "..";
 import { CustomTooltip } from './CustomTooltip';
 
@@ -62,7 +62,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
         onDateClicked(activeTooltipIndex);
     };
 
-    const valueFormatter = showAssetAmount ? (value => value.toFixed(4)) : toCurrency;
+    const valueFormatter = showAssetAmount ? toAssetAmount : toCurrency;
 
     return (
         <>
