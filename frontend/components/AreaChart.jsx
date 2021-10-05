@@ -17,6 +17,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
     const values = useMemo(() => data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.value }), d)), [assets]);
 
     const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, 1])));
+    const [selectedAsset, setSelectedAsset] = useState(null);
     const [stacked, setStacked] = useState(true);
 
     const rainbow = new Rainbow();
@@ -32,10 +33,22 @@ export const AreaChart = ({ data, onDateClicked }) => {
         setThickness({ ...thickness, [dataKey]: 1 });
     };
 
+    const handleMouseClick = (props) => {
+        const { dataKey } = props;
+
+        if (selectedAsset) {
+            setSelectedAsset(null);
+        } else {
+            setSelectedAsset(dataKey);
+        }
+
+        console.log(props)
+    };
+
     const handleDateClicked = (payload) => {
         const { activeTooltipIndex } = payload;
         onDateClicked(activeTooltipIndex);
-    }
+    };
 
     return (
         <>
@@ -47,14 +60,20 @@ export const AreaChart = ({ data, onDateClicked }) => {
                     <YAxis tickFormatter={value => toCurrency(value, context, 0)} />
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <Tooltip content={CustomTooltip} />
-                    <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+                    <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onMouseUp={handleMouseClick} />
 
-                    {assets.map((name, index) => {
-                        const color = `#${rainbow.colorAt(index)}`;
-                        return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
-                    })}
+                    {selectedAsset ? (
+                        <Area type="monotone" dataKey={selectedAsset} />
+                    ) : (
+                        assets.map((name, index) => {
+                            const color = `#${rainbow.colorAt(index)}`;
+                            return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
+                        })
+                    )}
 
-                    {stacked && <Area type="monotone" dataKey="Total as BTC" strokeWidth={thickness['Total as BTC']} strokeDasharray="3 3" stroke="red" fill="transparent" />}
+                    {stacked && !selectedAsset && (
+                        <Area type="monotone" dataKey="Total as BTC" strokeWidth={thickness['Total as BTC']} strokeDasharray="3 3" stroke="red" fill="transparent" />
+                    )}
                 </Chart>
             </ResponsiveContainer>
         </>
