@@ -16,7 +16,11 @@ WORKDIR /app
 RUN rustup default nightly
 COPY Cargo.toml Cargo.lock ./
 COPY src src
-RUN cargo install --path .
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo install --path .
+
 COPY --from=build-frontend /app/static /app/static
 
 CMD [ "crypto-balance" ]
