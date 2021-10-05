@@ -17,11 +17,17 @@ export const AreaChart = ({ data, onDateClicked }) => {
     const assets = useMemo(() => (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
     const allAssets = [...assets, 'Total as BTC']
 
-    const values = useMemo(() => data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.value }), d)), [assets]);
-
     const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, DEFAULT_THICKNESS])));
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [stacked, setStacked] = useState(true);
+    const [showAssetAmount, setShowAssetAmount] = useState(false);
+
+    const values = useMemo(() => (
+        data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.[showAssetAmount ? 'amount' : 'value'] }), d))
+    ), [
+        assets,
+        showAssetAmount
+    ]);
 
     const rainbow = new Rainbow();
     rainbow.setNumberRange(0, assets.length + 1);
@@ -41,6 +47,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
 
         if (selectedAsset) {
             setSelectedAsset(null);
+            setShowAssetAmount(false);
         } else {
             setSelectedAsset({
                 name: dataKey,
@@ -55,16 +62,23 @@ export const AreaChart = ({ data, onDateClicked }) => {
         onDateClicked(activeTooltipIndex);
     };
 
+    const valueFormatter = showAssetAmount ? (value => value.toFixed(4)) : toCurrency;
+
     return (
         <>
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
+            {selectedAsset && (
+                <Checkbox label="Show asset value" isSelected={showAssetAmount} onCheckboxChange={e => setShowAssetAmount(e.target.checked)} />
+            )}
+
             <ResponsiveContainer width="90%" height={500}>
                 <Chart data={values} onClick={handleDateChanged}>
                     <XAxis dataKey="time" />
-                    <YAxis tickFormatter={value => toCurrency(value, context, 0)} />
+                    <YAxis tickFormatter={value => valueFormatter(value, context, 0)} />
+
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <Tooltip content={CustomTooltip} />
+                    <Tooltip content={CustomTooltip} valueFormatter={valueFormatter} />
                     <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onMouseUp={handleMouseClick} />
 
                     {selectedAsset ? (
