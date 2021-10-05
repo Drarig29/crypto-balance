@@ -2,11 +2,14 @@ import React, { createContext, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import { DataContainer } from './components/DataContainer';
+import { LoginScreen } from './components/LoginScreen';
 
 import './style.css';
 
 const defaultValues = {
+    password: null,
     revealValues: true,
+    showAssetAmount: false,
     currency: {
         name: 'EUR',
         symbol: '€',
@@ -15,20 +18,33 @@ const defaultValues = {
 
 const Context = createContext();
 
+function load() {
+    const raw = window.localStorage.getItem('settings');
+    if (!raw) return null;
+    const decoded = decodeURIComponent(atob(raw));
+    return JSON.parse(decoded);
+}
+
+function save(state) {
+    const raw = JSON.stringify(state);
+    const encoded = btoa(encodeURIComponent(raw));
+    window.localStorage.setItem('settings', encoded);
+}
+
 const App = () => {
-    const settings = JSON.parse(window.localStorage.getItem('settings')) || defaultValues;
+    const settings = load() || defaultValues;
     const [state, setState] = useState(settings);
 
     useEffect(() => {
-        window.localStorage.setItem('settings', JSON.stringify(state));
+        save(state)
     }, [state]);
 
     return (
-        <main>
-            <Context.Provider value={[state, setState]}>
+        <Context.Provider value={[state, setState]}>
+            <LoginScreen>
                 <DataContainer />
-            </Context.Provider>
-        </main>
+            </LoginScreen>
+        </Context.Provider>
     )
 }
 

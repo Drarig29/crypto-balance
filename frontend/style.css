@@ -5,6 +5,12 @@ html {
   overflow: hidden;
 }
 
+html,
+body,
+#app {
+  height: 100%;
+}
+
 main {
   display: flex;
   flex-direction: column;
@@ -26,6 +32,36 @@ header {
 header > div {
   display: flex;
   align-items: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 2em 2em 2em;
+  color: white;
+}
+
+form button {
+  border: none;
+  margin-top: 2em;
+  background: #5faac4;
+  color: white;
+  padding: 0.8em 1em;
+  border-radius: 1em;
+}
+
+form .password {
+  display: flex;
+  gap: 0.8em;
+  background: white;
+  padding: 0.8em;
+}
+
+form .password input {
+  border: none;
 }
 
 .recharts-text {

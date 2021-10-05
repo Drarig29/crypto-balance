@@ -41,6 +41,7 @@ export const DataContainer = () => {
         console.debug(dateRange);
 
         const body = JSON.stringify({
+            password: context.password,
             conversion: context.currency.name,
             start: toISOString(dateRange.from),
             end: toISOString(dateRange.to),
@@ -92,7 +93,7 @@ export const DataContainer = () => {
     const currentSnapshot = snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1];
 
     return (
-        <>
+        <main>
             <header>
                 <div>
                     <DatePicker initialRange={dateRange} onRangeChange={(from, to) => setDateRange({ from, to })} />
@@ -105,6 +106,6 @@ export const DataContainer = () => {
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
             <DonutChart data={currentSnapshot} label={currentSnapshot && currentSnapshot.time} />
-        </>
+        </main>
     )
 }
