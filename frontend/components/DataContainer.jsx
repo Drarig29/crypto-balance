@@ -99,8 +99,8 @@ export const DataContainer = () => {
                     <Spinner visible={loading} />
                 </div>
                 <aside>
-                    <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
                     Total (BTC) : {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'].value, context)}
+                    <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
                 </aside>
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
