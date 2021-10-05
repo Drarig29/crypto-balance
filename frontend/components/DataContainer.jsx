@@ -88,7 +88,14 @@ export const DataContainer = () => {
             ...context,
             revealValues: revealed,
         });
-    }
+    };
+
+    const handleLogout = () => {
+        setContext({
+            ...context,
+            password: null,
+        });
+    };
 
     const currentSnapshot = snapshots[selectedIndex !== null ? selectedIndex : snapshots.length - 1];
 
@@ -102,6 +109,9 @@ export const DataContainer = () => {
                 <aside>
                     Total (BTC) : {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'].value, context)}
                     <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
+                    <a onClick={handleLogout}>
+                        <img className='aside-button' src='assets/logout.svg'></img>
+                    </a>
                 </aside>
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />

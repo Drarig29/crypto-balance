@@ -12,7 +12,7 @@ export const VisibilityButton = ({ initiallyRevealed, onRevealedChange }) => {
 
     return (
         <a onClick={handleClick}>
-            <img className="reveal-button" src={src}></img>
+            <img className='aside-button' src={src}></img>
         </a>
     )
 }
