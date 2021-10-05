@@ -12,7 +12,7 @@ const DEFAULT_THICKNESS = 1;
 const HIGHLIGHT_THICKNESS = 3;
 
 export const AreaChart = ({ data, onDateClicked }) => {
-    const [context] = useContext(Context);
+    const [context, setContext] = useContext(Context);
 
     const assets = useMemo(() => (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
     const allAssets = [...assets, 'Total as BTC']
@@ -20,13 +20,13 @@ export const AreaChart = ({ data, onDateClicked }) => {
     const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, DEFAULT_THICKNESS])));
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [stacked, setStacked] = useState(true);
-    const [showAssetAmount, setShowAssetAmount] = useState(false);
 
     const values = useMemo(() => (
-        data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.[showAssetAmount ? 'amount' : 'value'] }), d))
+        data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.[selectedAsset && context.showAssetAmount ? 'amount' : 'value'] }), d))
     ), [
+        context,
         assets,
-        showAssetAmount
+        selectedAsset,
     ]);
 
     const rainbow = new Rainbow();
@@ -47,7 +47,6 @@ export const AreaChart = ({ data, onDateClicked }) => {
 
         if (selectedAsset) {
             setSelectedAsset(null);
-            setShowAssetAmount(false);
         } else {
             setSelectedAsset({
                 name: dataKey,
@@ -62,14 +61,21 @@ export const AreaChart = ({ data, onDateClicked }) => {
         onDateClicked(activeTooltipIndex);
     };
 
-    const valueFormatter = showAssetAmount ? toAssetAmount : toCurrency;
+    const handleDataTypeChanged = (showAssetAmount) => {
+        setContext({
+            ...context,
+            showAssetAmount,
+        });
+    };
+
+    const valueFormatter = context.showAssetAmount ? toAssetAmount : toCurrency;
 
     return (
         <>
             <Checkbox label="Show stacked" isSelected={stacked} onCheckboxChange={e => setStacked(e.target.checked)} />
 
             {selectedAsset && (
-                <Checkbox label="Show asset value" isSelected={showAssetAmount} onCheckboxChange={e => setShowAssetAmount(e.target.checked)} />
+                <Checkbox label="Show asset value" isSelected={context.showAssetAmount} onCheckboxChange={e => handleDataTypeChanged(e.target.checked)} />
             )}
 
             <ResponsiveContainer width="90%" height={500}>
