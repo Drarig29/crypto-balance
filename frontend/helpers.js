@@ -14,6 +14,15 @@ export function toCurrency(value, context, digits = 2) {
     return amount.replace(/\d/g, '-');
 }
 
+export function toAssetAmount(value, context) {
+    const amount = value.toFixed(4);
+
+    if (context.revealValues)
+        return amount;
+
+    return amount.replace(/\d/g, '-');
+}
+
 export function toPercentage(percent) {
     return `${(percent * 100).toFixed(2)} %`;
 }
