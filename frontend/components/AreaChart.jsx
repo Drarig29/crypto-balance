@@ -8,6 +8,9 @@ import { toCurrency } from '../helpers';
 import { Context } from "..";
 import { CustomTooltip } from './CustomTooltip';
 
+const DEFAULT_THICKNESS = 1;
+const HIGHLIGHT_THICKNESS = 3;
+
 export const AreaChart = ({ data, onDateClicked }) => {
     const [context] = useContext(Context);
 
@@ -16,7 +19,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
 
     const values = useMemo(() => data.map(d => allAssets.reduce((acc, asset) => ({ ...acc, [asset]: d[asset]?.value }), d)), [assets]);
 
-    const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, 1])));
+    const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, DEFAULT_THICKNESS])));
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [stacked, setStacked] = useState(true);
 
@@ -25,24 +28,25 @@ export const AreaChart = ({ data, onDateClicked }) => {
 
     const handleMouseEnter = (props) => {
         const { dataKey } = props;
-        setThickness({ ...thickness, [dataKey]: 3 });
+        setThickness({ ...thickness, [dataKey]: HIGHLIGHT_THICKNESS });
     };
 
     const handleMouseLeave = (props) => {
         const { dataKey } = props;
-        setThickness({ ...thickness, [dataKey]: 1 });
+        setThickness({ ...thickness, [dataKey]: DEFAULT_THICKNESS });
     };
 
     const handleMouseClick = (props) => {
-        const { dataKey } = props;
+        const { dataKey, color } = props;
 
         if (selectedAsset) {
             setSelectedAsset(null);
         } else {
-            setSelectedAsset(dataKey);
+            setSelectedAsset({
+                name: dataKey,
+                color,
+            });
         }
-
-        console.log(props)
     };
 
     const handleDateClicked = (payload) => {
@@ -63,7 +67,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
                     <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onMouseUp={handleMouseClick} />
 
                     {selectedAsset ? (
-                        <Area type="monotone" dataKey={selectedAsset} />
+                        <Area type="monotone" dataKey={selectedAsset.name} strokeWidth={HIGHLIGHT_THICKNESS} stroke={selectedAsset.color} fill={selectedAsset.color} />
                     ) : (
                         assets.map((name, index) => {
                             const color = `#${rainbow.colorAt(index)}`;
