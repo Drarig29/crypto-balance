@@ -126,6 +126,10 @@ aside img {
   margin-right: 14px;
 }
 
+.danger {
+  color: #ff9c9c;
+}
+
 .DayPickerInput input {
   border-radius: 5px;
   padding: 6px;
