@@ -15,7 +15,7 @@ Edit the `.env` file at the root of the project with your personal API keys.
 Once done, simply do the following:
 
 ```bash
-DOCKER_BUILDKIT=1 docker-compose build
+docker-compose build
 docker-compose up -d
 ```
 
@@ -27,7 +27,7 @@ You can access:
 - The MongoDB web interface via http://127.0.0.1:8081/
 - The database via the port 27017
 
-**Note:** See [this answer](https://stackoverflow.com/a/60590697/3970387) to understand what `DOCKER_BUILDKIT=1` does.
+**Note:** You might need to build with either `DOCKER_BUILDKIT=1` or `COMPOSE_DOCKER_CLI_BUILD=1` depending on your docker-compose version. Upgrade to at least v2.0.0 to build without any of these flags.
 
 ## Back-end
 
