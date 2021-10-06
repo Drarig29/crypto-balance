@@ -34,3 +34,24 @@ export function toDateString(date) {
 
     return new Date(parseInt(date.$date.$numberLong)).toDateString()
 }
+
+export async function sendRequest(url, body) {
+    body = JSON.stringify(body);
+
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+
+    const options = {
+        method: 'POST',
+        headers,
+        body,
+    };
+
+    const response = await fetch(url, options);
+    const obj = await response.json();
+
+    return {
+        status: response.status,
+        body: obj,
+    };
+}

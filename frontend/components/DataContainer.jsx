@@ -6,7 +6,7 @@ import { DatePicker } from './DatePicker';
 import { DonutChart } from './DonutChart';
 import { VisibilityButton } from './VisibilityButton';
 
-import { toCurrency, toDateString, toISOString } from '../helpers';
+import { sendRequest, toCurrency, toDateString, toISOString } from '../helpers';
 import { Context } from '..';
 
 function Spinner({ visible }) {
@@ -46,38 +46,22 @@ export const DataContainer = () => {
     });
 
     useEffect(() => {
-        console.debug(dateRange);
-
-        const body = JSON.stringify({
-            password: context.password,
-            conversion: context.currency.name,
-            start: toISOString(dateRange.from),
-            end: toISOString(dateRange.to),
-        });
-
-        console.debug({ body });
-
-        const headers = new Headers();
-        headers.append("Content-Type", "application/json");
-
-        const options = {
-            method: 'POST',
-            headers,
-            body,
-        };
-
         setLoading(true);
         setSelectedIndex(null);
 
         const getSnapshots = async () => {
-            const response = await fetch('/api', options);
-            const obj = await response.json();
+            const response = await sendRequest('/api', {
+                password: context.password,
+                conversion: context.currency.name,
+                start: toISOString(dateRange.from),
+                end: toISOString(dateRange.to),
+            })
 
             if (response.status !== 200) {
-                throw obj;
+                throw response.body;
             }
 
-            return transformData(obj);
+            return transformData(response.body);
         }
 
         getSnapshots()
