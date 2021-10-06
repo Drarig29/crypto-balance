@@ -114,9 +114,16 @@ form .password input {
   }
 }
 
-.aside-button {
-  margin-left: 14px;
+aside img {
   transform: translate(0, 4px);
+}
+
+.reveal-btn {
+  margin-left: 14px;
+}
+
+.logout-btn {
+  margin-right: 14px;
 }
 
 .DayPickerInput input {

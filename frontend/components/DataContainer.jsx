@@ -13,6 +13,14 @@ function Spinner({ visible }) {
     return <span className="spinner" style={{ display: visible ? 'block' : 'none' }}></span>
 }
 
+function LogoutButton({ onLogout }) {
+    return (
+        <a className='logout-btn' onClick={onLogout}>
+            <img src='assets/logout.svg'></img>
+        </a>
+    )
+}
+
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
         time: toDateString(snapshot.time),
@@ -107,11 +115,9 @@ export const DataContainer = () => {
                     <Spinner visible={loading} />
                 </div>
                 <aside>
+                    <LogoutButton onLogout={handleLogout} />
                     Total (BTC) : {currentSnapshot && toCurrency(currentSnapshot['Total as BTC'].value, context)}
                     <VisibilityButton initiallyRevealed={context.revealValues} onRevealedChange={handleRevealedChange} />
-                    <a onClick={handleLogout}>
-                        <img className='aside-button' src='assets/logout.svg'></img>
-                    </a>
                 </aside>
             </header>
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
