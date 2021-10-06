@@ -43,6 +43,11 @@ pub struct Environment {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct AuthBody {
+    password: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct RequestBody {
     password: String,
     conversion: String,
@@ -107,6 +112,31 @@ impl<'r> Responder<'r, 'r> for ApiResponse {
     }
 }
 
+#[post("/auth", format = "json", data = "<body>")]
+async fn auth(body: Json<AuthBody>) -> ApiResponse {
+    let env_variables = match get_env_vars() {
+        Ok(res) => res,
+        Err(e) => {
+            return ApiResponse {
+                status: Status::InternalServerError,
+                json: json!(e.to_string()),
+            }
+        }
+    };
+
+    if body.password != env_variables.app_password {
+        return ApiResponse {
+            status: Status::Forbidden,
+            json: json!("Incorrect password".to_string()),
+        };
+    }
+
+    ApiResponse {
+        status: Status::Ok,
+        json: json!("Success".to_string()),
+    }
+}
+
 #[post("/api", format = "json", data = "<body>")]
 async fn api(body: Json<RequestBody>) -> ApiResponse {
     let env_variables = match get_env_vars() {
@@ -122,7 +152,7 @@ async fn api(body: Json<RequestBody>) -> ApiResponse {
     if body.password != env_variables.app_password {
         return ApiResponse {
             status: Status::Forbidden,
-            json: json!("Incorrect password.".to_string()),
+            json: json!("Incorrect password".to_string()),
         };
     }
 
@@ -214,7 +244,7 @@ async fn main() {
     dotenv().ok();
 
     let res = rocket::build()
-        .mount("/", routes![index, api, files])
+        .mount("/", routes![index, auth, api, files])
         .launch()
         .await;
 
