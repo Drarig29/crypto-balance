@@ -10,7 +10,7 @@ import { sendRequest, toCurrency, toDateString, toISOString } from '../helpers';
 import { Context } from '..';
 
 function Spinner({ visible }) {
-    return <span className="spinner" style={{ display: visible ? 'block' : 'none' }}></span>
+    return <span className="spinner" style={{ display: visible ? 'block' : 'none' }}></span>;
 }
 
 function LogoutButton({ onLogout }) {
@@ -18,13 +18,13 @@ function LogoutButton({ onLogout }) {
         <a className='logout-btn' onClick={onLogout}>
             <img src='assets/logout.svg'></img>
         </a>
-    )
+    );
 }
 
 function transformData(snapshots) {
     const transformed = snapshots.map(snapshot => Object.assign({
         time: toDateString(snapshot.time),
-        "Total as BTC": snapshot.total_asset_of_btc,
+        'Total as BTC': snapshot.total_asset_of_btc,
     }, ...snapshot.balances.map(balance => ({
         [balance.asset]: balance
     }))));
@@ -55,14 +55,14 @@ export const DataContainer = () => {
                 conversion: context.currency.name,
                 start: toISOString(dateRange.from),
                 end: toISOString(dateRange.to),
-            })
+            });
 
             if (response.status !== 200) {
                 throw response.body;
             }
 
             return transformData(response.body);
-        }
+        };
 
         getSnapshots()
             .then(snapshots => {
@@ -107,5 +107,5 @@ export const DataContainer = () => {
             <AreaChart data={snapshots} onDateClicked={index => setSelectedIndex(index)} />
             <DonutChart data={currentSnapshot} label={currentSnapshot && currentSnapshot.time} />
         </main>
-    )
-}
+    );
+};

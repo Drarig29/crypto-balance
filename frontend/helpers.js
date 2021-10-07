@@ -29,17 +29,17 @@ export function toPercentage(percent) {
 
 export function toDateString(date) {
     if (typeof date.$date === 'string') {
-        return new Date(date.$date).toDateString()
+        return new Date(date.$date).toDateString();
     }
 
-    return new Date(parseInt(date.$date.$numberLong)).toDateString()
+    return new Date(parseInt(date.$date.$numberLong)).toDateString();
 }
 
 export async function sendRequest(url, body) {
     body = JSON.stringify(body);
 
     const headers = new Headers();
-    headers.append("Content-Type", "application/json");
+    headers.append('Content-Type', 'application/json');
 
     const options = {
         method: 'POST',

@@ -16,25 +16,25 @@ export const DatePicker = ({ initialRange, onRangeChange }) => {
         if (moment(to).diff(moment(from), 'months') < 2) {
             toPickerRef.current.getDayPicker().showMonth(from);
         }
-    }
+    };
 
     const handleFromChange = (from) => {
         setFrom(from);
         onRangeChange(from, to);
-    }
+    };
 
     const handleToChange = (to) => {
         setTo(to);
         updateFromMonth();
         onRangeChange(from, to);
-    }
+    };
 
     const props = {
         inputProps: { readOnly: true },
-        format: "LL",
+        format: 'LL',
         formatDate,
         parseDate,
-    }
+    };
 
     const modifiers = { start: from, end: to };
 
@@ -75,4 +75,4 @@ export const DatePicker = ({ initialRange, onRangeChange }) => {
             </span>
         </div>
     );
-}
+};

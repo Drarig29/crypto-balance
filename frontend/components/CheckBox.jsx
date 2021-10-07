@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export const Checkbox = ({ label, isSelected, onCheckboxChange }) => (
     <div style={{ color: 'white', marginBottom: 10 }}>

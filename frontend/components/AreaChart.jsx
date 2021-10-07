@@ -5,7 +5,7 @@ import { YAxis, Tooltip, Area, CartesianGrid, XAxis, AreaChart as Chart, Legend,
 
 import { Checkbox } from './CheckBox';
 import { toAssetAmount, toCurrency } from '../helpers';
-import { Context } from "..";
+import { Context } from '..';
 import { CustomTooltip } from './CustomTooltip';
 
 const DEFAULT_THICKNESS = 1;
@@ -14,8 +14,8 @@ const HIGHLIGHT_THICKNESS = 3;
 export const AreaChart = ({ data, onDateClicked }) => {
     const [context, setContext] = useContext(Context);
 
-    const assets = useMemo(() => (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
-    const allAssets = [...assets, 'Total as BTC']
+    const assets = useMemo(() => (data.length > 0 && Object.keys(data[0]) || []).filter(key => key !== 'Total as BTC' && key !== 'time'), [data]);
+    const allAssets = [...assets, 'Total as BTC'];
 
     const [thickness, setThickness] = useState(Object.fromEntries(allAssets.map(asset => [asset, DEFAULT_THICKNESS])));
     const [selectedAsset, setSelectedAsset] = useState(null);
@@ -92,7 +92,7 @@ export const AreaChart = ({ data, onDateClicked }) => {
                     ) : (
                         assets.map((name, index) => {
                             const color = `#${rainbow.colorAt(index)}`;
-                            return <Area key={index} type="monotone" dataKey={name} stackId={stacked && "1"} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />
+                            return <Area key={index} type="monotone" dataKey={name} stackId={stacked && '1'} fillOpacity={0.2} strokeWidth={thickness[name]} stroke={color} fill={color} />;
                         })
                     )}
 
@@ -102,5 +102,5 @@ export const AreaChart = ({ data, onDateClicked }) => {
                 </Chart>
             </ResponsiveContainer>
         </>
-    )
-}
+    );
+};

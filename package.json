@@ -12,6 +12,8 @@
         "build:frontend": "node esbuild.js",
         "build": "npm run build:backend && npm install && npm run build:frontend",
         "dev": "node esbuild.js --dev",
+        "lint": "eslint --ext '.js,.jsx' frontend",
+        "lint:fix": "npm run lint -- --fix",
         "start": "cargo run"
     },
     "author": "Corentin Girard <corentingirard.dev@gmail.com>",
@@ -24,5 +26,11 @@
         "react-day-picker": "^7.4.10",
         "react-dom": "^17.0.2",
         "recharts": "^2.0.9"
+    },
+    "devDependencies": {
+        "babel-eslint": "^10.1.0",
+        "eslint": "^6.8.0",
+        "eslint-plugin-jsx-a11y": "^6.4.1",
+        "eslint-plugin-react": "^7.26.1"
     }
 }
