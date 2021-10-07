@@ -6,7 +6,7 @@ module.exports = {
         'eslint:recommended',
         'plugin:react/recommended'
     ],
-    parser: 'babel-eslint',
+    parser: '@babel/eslint-parser',
     plugins: [
         'jsx-a11y'
     ],
