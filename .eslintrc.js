@@ -16,7 +16,8 @@ module.exports = {
         }
     },
     rules: {
+        'react/prop-types': 0,
         quotes: ['error', 'single'],
         semi: ['error', 'always']
     }
-  }
+}
