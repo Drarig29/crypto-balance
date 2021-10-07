@@ -10,7 +10,7 @@
     "scripts": {
         "build:backend": "cargo build",
         "build:frontend": "node esbuild.js",
-        "build": "npm run build:backend && npm install && npm run build:frontend",
+        "build": "cargo build && node esbuild.js",
         "dev": "node esbuild.js --dev",
         "lint": "eslint --ext '.js,.jsx' frontend",
         "lint:fix": "npm run lint -- --fix",
