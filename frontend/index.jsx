@@ -36,7 +36,7 @@ const App = () => {
     const [state, setState] = useState(settings);
 
     useEffect(() => {
-        save(state)
+        save(state);
     }, [state]);
 
     return (
@@ -45,8 +45,8 @@ const App = () => {
                 <DataContainer />
             </LoginScreen>
         </Context.Provider>
-    )
-}
+    );
+};
 
 ReactDOM.render(<App />, document.getElementById('app'));
 

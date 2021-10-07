@@ -6,8 +6,8 @@ import { Legend, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recha
 import { CustomTooltip } from './CustomTooltip';
 
 export const DonutChart = ({ label, data }) => {
-    const total = data && data["Total as BTC"].value;
-    const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== "Total as BTC" && key !== "time"), [data]);
+    const total = data && data['Total as BTC'].value;
+    const assets = useMemo(() => (Object.keys(data || {})).filter(key => key !== 'Total as BTC' && key !== 'time'), [data]);
     const values = useMemo(() => assets.map(asset => ({ name: asset, value: data[asset].value, percent: data[asset].value / total })), [assets]);
 
     const [thickness, setThickness] = useState(Object.fromEntries(assets.map(asset => [asset, 1])));
@@ -32,7 +32,7 @@ export const DonutChart = ({ label, data }) => {
                 <text className="recharts-text" x={cx} y={cy} dy={8} textAnchor="middle">{label}</text>
             </g>
         );
-    }
+    };
 
     return (
         <ResponsiveContainer width="90%" height={300} margin={{ left: 50, right: 50 }}>
@@ -43,12 +43,12 @@ export const DonutChart = ({ label, data }) => {
                     activeShape={renderActiveShape} activeIndex={0}>
                     {values.map((value, index) => {
                         const color = `#${rainbow.colorAt(index)}`;
-                        return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />
+                        return <Cell key={index} stroke={color} fill={color} fillOpacity={0.6} strokeWidth={thickness[value.name]} />;
                     })}
                 </Pie>
                 <Tooltip content={CustomTooltip} />
                 <Legend onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
             </PieChart>
         </ResponsiveContainer>
-    )
-}
+    );
+};

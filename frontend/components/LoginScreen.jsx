@@ -39,7 +39,7 @@ export const LoginScreen = ({ children }) => {
         } else {
             setMessage(response.body);
         }
-    }
+    };
 
-    return <Form error={message} onSubmit={handlePassword}></Form>
-}
+    return <Form error={message} onSubmit={handlePassword}></Form>;
+};

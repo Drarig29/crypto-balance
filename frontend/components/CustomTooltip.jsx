@@ -1,7 +1,7 @@
-import React, { useContext } from "react";
+import React, { useContext } from 'react';
 
 import { Context } from '..';
-import { toCurrency, toPercentage } from "../helpers";
+import { toCurrency, toPercentage } from '../helpers';
 
 export const CustomTooltip = ({ active, payload, label, valueFormatter }) => {
     const [context] = useContext(Context);

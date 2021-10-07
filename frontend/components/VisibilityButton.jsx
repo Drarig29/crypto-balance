@@ -8,11 +8,11 @@ export const VisibilityButton = ({ initiallyRevealed, onRevealedChange }) => {
         const toggled = !revealed;
         setRevealed(toggled);
         onRevealedChange(toggled);
-    }
+    };
 
     return (
         <a className='reveal-btn' onClick={handleClick}>
             <img src={src}></img>
         </a>
-    )
-}
+    );
+};
