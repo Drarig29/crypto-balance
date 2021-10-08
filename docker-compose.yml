@@ -2,6 +2,43 @@ version: '3.1'
 
 services:
 
+  nginx-proxy:
+    image: jwilder/nginx-proxy:alpine
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true"
+    container_name: nginx-proxy
+    networks:
+      - proxy_network
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - DEFAULT_HOST=${DEFAULT_HOST_SSL}
+    volumes:
+      - ./proxy/conf.d:/etc/nginx/conf.d:rw
+      - ./proxy/vhost.d:/etc/nginx/vhost.d:rw
+      - ./proxy/html:/usr/share/nginx/html:rw
+      - ./proxy/certs:/etc/nginx/certs:ro
+      - ./proxy/my_custom_proxy_settings.conf:/etc/nginx/conf.d/my_custom_proxy_settings.conf:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: unless-stopped
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt
+    depends_on:
+      - nginx-proxy
+    networks:
+      - proxy_network
+    volumes:
+      - ./proxy/certs:/etc/nginx/certs:rw
+      - ./proxy/vhost.d:/etc/nginx/vhost.d:rw
+      - ./proxy/html:/usr/share/nginx/html:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
   mongo:
     image: mongo
     restart: unless-stopped
