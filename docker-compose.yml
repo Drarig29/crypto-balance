@@ -76,8 +76,6 @@ services:
       MONGODB_PORT: ${MONGODB_PORT}
       MONGODB_USERNAME: ${MONGODB_USERNAME}
       MONGODB_PASSWORD: ${MONGODB_PASSWORD}
-    ports:
-      - 80:8000
 
 networks:
   proxy_network:
