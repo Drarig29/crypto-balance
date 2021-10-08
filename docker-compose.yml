@@ -1,7 +1,6 @@
-version: '3.1'
+version: "3.1"
 
 services:
-
   nginx-proxy:
     image: jwilder/nginx-proxy:alpine
     labels:
@@ -64,6 +63,8 @@ services:
     build: .
     image: crypto-balance
     restart: unless-stopped
+    networks:
+      - proxy_network
     environment:
       ROCKET_ADDRESS: 0.0.0.0
       ROCKET_PORT: 8000
@@ -77,3 +78,6 @@ services:
       MONGODB_PASSWORD: ${MONGODB_PASSWORD}
     ports:
       - 80:8000
+
+networks:
+  proxy_network:
