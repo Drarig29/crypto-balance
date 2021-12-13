@@ -4,7 +4,7 @@ A web application made with Rust and React.
 
 You can see an area chart with all your cryptocurrencies in the same chart. And a **full pie chart** whereas the one Binance offers groups every little amount of crypto in a single "Others" section...
 
-![Demo of the front-end](demo.gif)
+![Demo of the frontend](demo.gif)
 
 ## Usage
 
@@ -29,9 +29,9 @@ You can access:
 
 **Note:** You might need to build with either `DOCKER_BUILDKIT=1` or `COMPOSE_DOCKER_CLI_BUILD=1` depending on your docker-compose version. Upgrade to at least v2.0.0 to build without any of these flags.
 
-## Back-end
+## Backend
 
-The back-end (in Rust) gets daily snapshots of your wallets and the price history for each cryptocurrency you have in your wallets.
+The backend (in Rust) gets daily snapshots of your wallets and the price history for each cryptocurrency you have in your wallets.
 
 Used APIs:
 
@@ -63,7 +63,7 @@ Go [here](https://p.nomics.com/cryptocurrency-bitcoin-api) to know how to create
 
 ### How it works?
 
-- Receives an API request from the front-end
+- Receives an API request from the frontend
 - Gets data stored in the MongoDB database
 - Computes the time range of this data
 - Computes the needed timespans to fill in the blanks (returns vector of timespans)
@@ -76,7 +76,7 @@ Go [here](https://p.nomics.com/cryptocurrency-bitcoin-api) to know how to create
   - Upload the results to the database (the time is a primary key)
   - Aggregates data (wallet snapshots with price history) and returns as JSON
 
-## Front-end
+## Frontend
 
 - Built with React
 - Charts are made with [Recharts](https://recharts.org/en-US/)
