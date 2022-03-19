@@ -3,7 +3,7 @@ version: '3.1'
 services:
 
   mongo:
-    image: mongo
+    image: mongo:5
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: crypto-balance
@@ -15,13 +15,12 @@ services:
       - 27017:27017
 
   mongo-express:
-    image: mongo-express
+    image: mongo-express:latest
     restart: unless-stopped
     ports:
       - 8081:8081
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_USERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongo:27017
 
   crypto-balance:
     build: .
