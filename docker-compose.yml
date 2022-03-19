@@ -39,4 +39,4 @@ services:
       MONGODB_USERNAME: ${MONGODB_USERNAME}
       MONGODB_PASSWORD: ${MONGODB_PASSWORD}
     ports:
-      - 80:8000
+      - 8000:8000
